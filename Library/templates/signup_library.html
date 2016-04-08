@@ -1,0 +1,59 @@
+{% extends "layout.html" %}
+{% block body %}
+
+<br />
+<!-- Library signup -->
+<form class="form-horizontal">
+<fieldset>
+
+<!-- Form Name -->
+<legend>Library Sign up</legend>
+<!-- Text input-->
+<div class="form-group">
+  <label class="col-md-4 control-label" for="library_id">Username</label>  
+  <div class="col-md-4">
+  <input id="library_id" name="library_id" type="text" placeholder="Username" class="form-control input-md">
+    
+  </div>
+</div>
+
+<!-- Text input-->
+<div class="form-group">
+  <label class="col-md-4 control-label" for="library_name">Library Name</label>  
+  <div class="col-md-4">
+  <input id="library_name" name="library_name" type="text" placeholder="Bloomfield Library" class="form-control input-md">
+    
+  </div>
+</div>
+
+<!-- Text input-->
+<div class="form-group">
+  <label class="col-md-4 control-label" for="lib_location">Location</label>  
+  <div class="col-md-4">
+  <input id="lib_location" name="lib_location" type="text" placeholder="New Jersey" class="form-control input-md">
+    
+  </div>
+</div>
+
+<!-- Password input-->
+<div class="form-group">
+  <label class="col-md-4 control-label" for="password">Password</label>
+  <div class="col-md-4">
+    <input id="password" name="password" type="password" placeholder="" class="form-control input-md" required="">
+    
+  </div>
+</div>
+
+<!-- Button -->
+<div class="form-group">
+  <label class="col-md-4 control-label" for="submit_reader"></label>
+  <div class="col-md-4">
+    <button id="submit_reader" name="submit_reader" class="btn btn-primary">Submit</button>
+  </div>
+</div>
+
+</fieldset>
+</form>
+
+
+{% endblock %}

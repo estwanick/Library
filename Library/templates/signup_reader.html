@@ -1,0 +1,71 @@
+{% extends "layout.html" %}
+{% block body %}
+
+<br />
+<!-- Reader Signup-->
+<form class="form-horizontal" action="{{ url_for('add_reader') }}" method="post">
+<fieldset>
+    
+<!-- Form Name -->
+<legend>Reader Signup</legend>
+<!-- Text input-->
+<div class="form-group">
+  <label class="col-md-4 control-label" for="reader_id">Username</label>  
+  <div class="col-md-4">
+  <input id="reader_id" name="reader_id" type="text" placeholder="Username" class="form-control input-md">
+    
+  </div>
+</div>
+
+<!-- Text input-->
+<div class="form-group">
+  <label class="col-md-4 control-label" for="reader_name">Reader Name</label>  
+  <div class="col-md-4">
+  <input id="reader_name" name="reader_name" type="text" placeholder="First Name, Last Name" class="form-control input-md">
+    
+  </div>
+</div>
+
+<!-- Text input-->
+<div class="form-group">
+  <label class="col-md-4 control-label" for="reader_type">Reader Type</label>  
+  <div class="col-md-4">
+  <input id="reader_type" name="reader_type" type="text" placeholder="Researcher" class="form-control input-md">
+    
+  </div>
+</div>
+
+<!-- Text input-->
+<div class="form-group">
+  <label class="col-md-4 control-label" for="lib_id">Library ID</label>  
+  <div class="col-md-4">
+  <input id="lib_id" name="lib_id" type="text" placeholder="Local Library" class="form-control input-md">
+    
+  </div>
+</div>
+
+<!-- Password input-->
+<div class="form-group">
+  <label class="col-md-4 control-label" for="password">Password</label>
+  <div class="col-md-4">
+    <input id="password" name="password" type="password" placeholder="" class="form-control input-md" required="">
+    
+  </div>
+</div>
+
+<!-- Button -->
+<div class="form-group">
+  <label class="col-md-4 control-label" for="submit_reader"></label>
+  <div class="col-md-4">
+    <button id="submit_reader" name="submit_reader" class="btn btn-primary">Submit</button>
+  </div>
+</div>
+
+</fieldset>
+</form>
+
+<!-- Library signup -->
+<form class="form-horizontal">
+<fieldset>
+
+{% endblock %}

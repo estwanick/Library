@@ -4,7 +4,7 @@ from flask import Flask, request, session, g, redirect, url_for, abort, render_t
 from flask.ext.bcrypt import Bcrypt 
 
 #Configuration
-DATABASE = 'database/articles.db'
+DATABASE = 'database/library.db'
 DEBUG = True
 SECRET_KEY = 'Development key'
 USERNAME = 'admin'
@@ -14,120 +14,48 @@ PASSWORD = 'admin'
 app = Flask(__name__)
 app.config.from_object(__name__)
 
-#Flask-Login
-# login_manager = LoginManager()
-# login_manager.init_app(app)
-
 #Flask-Bcrypt
 bcrypt = Bcrypt(app) 
 
-# @login_manager.user_loader
-# def load_user(user_id):
-#     return User.get(user_id) 
-
-@app.route('/inventory/')
-@app.route('/inventory/<param>/')
-def inventory(param=None):
-    context = { 
-        'title': param
-    }
-    print param
-
-    return render_template('inventory.html', context=context)
-    
-@app.route('/register', methods=['GET','POST'])
-def register():
-    
-    message = ''
-    
-    if request.method == 'POST':
-        if request.form['password1'] != request.form['password2']:
-            message = 'Passwords do not match'
-        else:
-            if request.form['password1'] != '':
-                password = request.form['password1']
-                pw_hash = bcrypt.generate_password_hash(password)
-                print pw_hash
-                print bcrypt.check_password_hash(pw_hash, password)
-                if bcrypt.check_password_hash(pw_hash, password) == True:
-                    g.db.execute('insert into user (username, password) values (?, ?)', [request.form['email'], pw_hash])
-                    g.db.commit()
-                    print request.form['email'] 
-                    print request.form['password1']
-                    message = 'Thanks'
-            else:
-                message = 'Please enter a valid password'
-    
-    context = {
-        'message': message
-    } 
-    
-    return render_template('register.html', context=context)
-    
-@app.route('/users')
-@app.route('/users/<user>/')
-def users(user=None):
-
-    if user == None:
-        cur = g.db.execute('select * from user')
-        entries = [dict(email=row[0], password=row[1]) for row in cur.fetchall()]
-        print "Print All"
-        print entries
-    else:
-        cur = g.db.execute('select * from user where username = (?)', [user])
-        entries = [dict(email=row[0], password=row[1]) for row in cur.fetchall()]
-        print "Print Single" 
-        print entries 
-    
-    return render_template('users.html', entries=entries)
-    
-@app.route('/login', methods=['GET','POST'])
-def login():
-    error = None
-    if request.method == 'POST':
-        print 'POST REQUEST ACCEPTED'
-        
-        pw_hash = bcrypt.generate_password_hash(  request.form['password'])
-        print pw_hash
-        print bcrypt.check_password_hash(pw_hash, request.form['password'])
-        
-        cur = g.db.execute('select * from user where username=(?) and password=(?)', ( request.form['username'], pw_hash) )
-        entries = [dict(title=row[0], text=row[1]) for row in cur.fetchall()]
-        print entries
-       
-        if  entries != '': 
-            session['logged_in'] = True
-            flash('You were logged in')
-            return redirect(url_for('users'))
-            
-            
-    return render_template('login.html', error=error)
-    
-@app.route('/logout')
-def logout():    
-    session.pop('logged_in', None)
-    flash('You were logged out')
-    return redirect(url_for('show_entries'))
-
+#Home Page
 @app.route('/')
-def show_entries():
+def index():
+    return render_template('home.html')
 
-    cur = g.db.execute('select title, text from entries order by id desc')
-    entries = [dict(title=row[0], text=row[1]) for row in cur.fetchall()]
-    print entries
+#Navigate to Reader signup or Library Signup
+@app.route('/signup')
+def signup():
+    return render_template('signup.html')
+
+#Insert new reader into database    
+@app.route('/signup_reader')
+def signup_reader():    
+    return render_template('signup_reader.html')
     
-    return render_template('show_entries.html')
+@app.route('/add_reader', methods=['POST'])
+def add_reader():
+
+    if request.method == 'POST':
+        try:
+            g.db.execute('insert into Reader (reader_id, lib_id, reader_name, reader_type, password) values (?, ?, ?, ?, ?)', 
+                [ request.form['reader_id'], request.form['lib_id'], request.form['reader_name'], request.form['reader_type'], request.form['password'] ])
+            g.db.commit()
+        except:
+            print "FAILURE"        
+    else:
+        pass
     
-@app.route('/add', methods=['POST'])
-def add_entry():
-    if not session.get('logged_in'):
-        abort(401)
-    g.db.execute('insert into entries (title, text) values (?, ?)', [request.form['title'], request.form['text']])
-    g.db.commit()
-    #flash('New entry was successfully posted')
-    print request.form['title']
-    print request.form['text']
-    return redirect(url_for('show_entries'))
+    return redirect( url_for('signup_reader') )
+    
+    
+
+
+#insert new library into database    
+@app.route('/signup_library')
+def signup_library():
+    
+    return render_template('signup_library.html')
+
     
 @app.before_request
 def before_request():
@@ -150,3 +78,98 @@ def connect_db():
 
 if __name__ == "__main__":
     app.run()
+    
+# @app.route('/inventory/')
+# @app.route('/inventory/<param>/')
+# def inventory(param=None):
+#     context = { 
+#         'title': param
+#     }
+#     print param
+
+#     return render_template('inventory.html', context=context)
+    
+# @app.route('/register', methods=['GET','POST'])
+# def register():
+    
+#     message = ''
+    
+#     if request.method == 'POST':
+#         if request.form['password1'] != request.form['password2']:
+#             message = 'Passwords do not match'
+#         else:
+#             if request.form['password1'] != '':
+#                 password = request.form['password1']
+#                 pw_hash = bcrypt.generate_password_hash(password)
+#                 print pw_hash
+#                 print bcrypt.check_password_hash(pw_hash, password)
+#                 if bcrypt.check_password_hash(pw_hash, password) == True:
+#                     g.db.execute('insert into user (username, password) values (?, ?)', [request.form['email'], pw_hash])
+#                     g.db.commit()
+#                     print request.form['email'] 
+#                     print request.form['password1']
+#                     message = 'Thanks'
+#             else:
+#                 message = 'Please enter a valid password'
+    
+#     context = {
+#         'message': message
+#     } 
+    
+#     return render_template('register.html', context=context)
+    
+# @app.route('/users')
+# @app.route('/users/<user>/')
+# def users(user=None):
+
+#     if user == None:
+#         cur = g.db.execute('select * from user')
+#         entries = [dict(email=row[0], password=row[1]) for row in cur.fetchall()]
+#         print "Print All"
+#         print entries
+#     else:
+#         cur = g.db.execute('select * from user where username = (?)', [user])
+#         entries = [dict(email=row[0], password=row[1]) for row in cur.fetchall()]
+#         print "Print Single" 
+#         print entries 
+    
+#     return render_template('users.html', entries=entries)
+    
+# @app.route('/login', methods=['GET','POST'])
+# def login():
+#     error = None
+#     if request.method == 'POST':
+#         print 'POST REQUEST ACCEPTED'
+        
+#         pw_hash = bcrypt.generate_password_hash(  request.form['password'])
+#         print pw_hash
+#         print bcrypt.check_password_hash(pw_hash, request.form['password'])
+        
+#         cur = g.db.execute('select * from user where username=(?) and password=(?)', ( request.form['username'], pw_hash) )
+#         entries = [dict(title=row[0], text=row[1]) for row in cur.fetchall()]
+#         print entries
+       
+#         if  entries != '': 
+#             session['logged_in'] = True
+#             flash('You were logged in')
+#             return redirect(url_for('users'))
+            
+            
+#     return render_template('login.html', error=error)
+    
+# @app.route('/logout')
+# def logout():    
+#     session.pop('logged_in', None)
+#     flash('You were logged out')
+#     return redirect(url_for('show_entries'))
+    
+# @app.route('/add', methods=['POST'])
+# def add_entry():
+#     if not session.get('logged_in'):
+#         abort(401)
+#     g.db.execute('insert into entries (title, text) values (?, ?)', [request.form['title'], request.form['text']])
+#     g.db.commit()
+#     #flash('New entry was successfully posted')
+#     print request.form['title']
+#     print request.form['text']
+#     return redirect(url_for('show_entries'))
