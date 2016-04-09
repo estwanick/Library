@@ -15,9 +15,11 @@ drop table if exists Waiting;
 drop table if exists Lend;
 
 create table Library(
-	lib_id int check( lib_id > 100 ),
+	lib_id varchar,
 	lib_name varchar,
-	lib_location varchar,
+	state varchar,
+    city varchar,
+    zip_code int,
     password varchar,
 	primary key(lib_id)
 );

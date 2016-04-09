@@ -3,34 +3,54 @@
 
 <br />
 <!-- Library signup -->
-<form class="form-horizontal">
+<form class="form-horizontal" action="{{ url_for('add_library') }}" method="post">
 <fieldset>
 
 <!-- Form Name -->
 <legend>Library Sign up</legend>
+
+
 <!-- Text input-->
 <div class="form-group">
-  <label class="col-md-4 control-label" for="library_id">Username</label>  
+  <label class="col-md-4 control-label" for="lib_name">Library Name</label>  
   <div class="col-md-4">
-  <input id="library_id" name="library_id" type="text" placeholder="Username" class="form-control input-md">
+  <input id="lib_name" name="lib_name" type="text" placeholder="Bloomfield Library" class="form-control input-md">
     
   </div>
 </div>
 
 <!-- Text input-->
 <div class="form-group">
-  <label class="col-md-4 control-label" for="library_name">Library Name</label>  
+  <label class="col-md-4 control-label" for="lib_state">State</label>  
   <div class="col-md-4">
-  <input id="library_name" name="library_name" type="text" placeholder="Bloomfield Library" class="form-control input-md">
+  <input id="lib_state" name="lib_state" type="text" placeholder="New Jersey" class="form-control input-md">
     
   </div>
 </div>
 
 <!-- Text input-->
 <div class="form-group">
-  <label class="col-md-4 control-label" for="lib_location">Location</label>  
+  <label class="col-md-4 control-label" for="lib_city">City</label>  
   <div class="col-md-4">
-  <input id="lib_location" name="lib_location" type="text" placeholder="New Jersey" class="form-control input-md">
+  <input id="lib_city" name="lib_city" type="text" placeholder="Newark" class="form-control input-md">
+    
+  </div>
+</div>
+
+<!-- Text input-->
+<div class="form-group">
+  <label class="col-md-4 control-label" for="lib_zip_code">Zipcode</label>  
+  <div class="col-md-4">
+  <input id="lib_zip_code" name="lib_zip_code" type="text" placeholder="New Jersey" class="form-control input-md">
+    
+  </div>
+</div>
+
+<!-- Text input-->
+<div class="form-group">
+  <label class="col-md-4 control-label" for="lib_id">Username</label>  
+  <div class="col-md-4">
+  <input id="lib_id" name="lib_id" type="text" placeholder="Username" class="form-control input-md">
     
   </div>
 </div>

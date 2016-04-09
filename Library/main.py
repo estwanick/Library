@@ -27,7 +27,7 @@ def index():
 def signup():
     return render_template('signup.html')
 
-#Insert new reader into database    
+#display reader sign up form   
 @app.route('/signup_reader')
 def signup_reader():    
     return render_template('signup_reader.html')
@@ -40,22 +40,103 @@ def add_reader():
             g.db.execute('insert into Reader (reader_id, lib_id, reader_name, reader_type, password) values (?, ?, ?, ?, ?)', 
                 [ request.form['reader_id'], request.form['lib_id'], request.form['reader_name'], request.form['reader_type'], request.form['password'] ])
             g.db.commit()
+            return redirect( url_for('login', username=request.form['reader_id'], type="Reader") )
         except:
-            print "FAILURE"        
+            print "could not commit to db"      
     else:
         pass
     
     return redirect( url_for('signup_reader') )
     
     
+@app.route('/reader_home')
+def reader_home():
 
+    # show a list of all books the reader currently has checked out.. 
 
-#insert new library into database    
+    return render_template('library_home.html')
+        
+#display library sign up form   
 @app.route('/signup_library')
 def signup_library():
-    
     return render_template('signup_library.html')
+    
+@app.route('/add_library', methods=['POST'])
+def add_library():
 
+    if request.method == 'POST':
+        try:
+            g.db.execute('insert into Library (lib_id, lib_name, state, city, zip_code, password) values (?, ?, ?, ?, ?, ?)', 
+                    [ request.form['lib_id'], request.form['lib_name'], request.form['lib_state'], request.form['lib_city'], request.form['lib_zip_code'], request.form['password'] ])
+            g.db.commit()
+            return redirect( url_for('login', username=request.form['lib_id'], type="Library") )
+        except:
+            print "could not commit to db"        
+    else:
+        pass
+    
+    return redirect( url_for('signup_library') )
+
+#display login form
+@app.route('/login/')
+@app.route('/login/<username>/')
+@app.route('/login/<username>/<type>/')
+def login(username=None, type=None):
+
+    context = {
+        "username": username,
+        "type": type
+    }
+
+    return render_template('login.html', context=context)
+    
+@app.route('/user_login', methods=['POST'])
+def user_login():
+
+    if request.method == 'POST':
+        entries = ''
+        
+        if request.form['radios'] == 'reader':
+            try:
+                cur = g.db.execute('select reader_id, password from reader where reader_id = (?) and password = (?)', 
+                    [ request.form['username'], request.form['password']  ])
+                entries = [dict(username=row[0], password=row[1]) for row in cur.fetchall()]
+                session['reader_logged_in'] = True
+                session['reader_id'] = request.form['username']
+            except:
+                print "could not find reader in DB"  
+        elif request.form['radios'] == 'library':
+            try:
+                cur = g.db.execute('select lib_id, password from library where lib_id = (?) and password = (?)', 
+                    [ request.form['username'], request.form['password']  ])
+                entries = [dict(username=row[0], password=row[1]) for row in cur.fetchall()]
+                session['lib_logged_in'] = True
+                session['lib_id'] = request.form['username']
+                return redirect( url_for('library_home') )
+            except:
+                print "could not find library in DB"  
+        else:
+            print "Request is not valid"
+        
+        print 'User: '
+        print entries
+        
+        if entries:
+            print "Login as :" + request.form['radios']
+        else:
+            print "Invalid login"
+    
+    else:
+        pass
+    
+    return redirect( url_for('login') )
+    
+@app.route('/library_home')
+def library_home():
+
+    # show a list of all books in inventory of this library and their status, location etc.. 
+
+    return render_template('library_home.html')
     
 @app.before_request
 def before_request():

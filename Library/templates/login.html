@@ -1,25 +1,59 @@
 {% extends "layout.html" %}
-{% block topcontent %}
+{% block body %}
 
-  {% if error %}<p class=error><strong>Error:</strong> {{ error }}{% endif %}
+<!-- Reader Signup-->
+<form class="form-horizontal" action="{{ url_for('user_login') }}" method="post">
+<fieldset>
+    
+<!-- Form Name -->
+<legend>Login</legend>
 
-<div class="row">
-  <div class="medium-6 medium-centered large-4 large-centered columns">
-
-    <form action="{{ url_for('login') }}" method=post>
-      <div class="row column log-in-form">
-        <h4 class="text-center">Log in with you email account</h4>
-        <label>Email
-          <input type="text" placeholder="somebody@example.com" name=username>
-        </label>
-        <label>Password
-          <input type="text" placeholder="Password" name=password>
-        </label>
-        <p><input type="submit" class="button expanded" value=login></input></p>
-        <p class="text-center"><a href="#">Forgot your password?</a></p>   
-      </div>
-    </form>
-
+<div class="form-group">
+  <label class="col-md-4 control-label" for="radios">Login as:</label>
+  <div class="col-md-4">
+  <div class="radio">
+    <label for="radios-0">
+      <input type="radio" name="radios" id="radios-0" value="reader" checked="checked">
+      Reader
+    </label>
+	</div>
+  <div class="radio">
+    <label for="radios-1">
+      <input type="radio" name="radios" id="radios-1" value="library">
+      Library
+    </label>
+	</div>
   </div>
 </div>
+
+<!-- Text input-->
+<div class="form-group">
+  <label class="col-md-4 control-label" for="username"">Username</label>  
+  <div class="col-md-4">
+  <input id="username" name="username"" type="text" placeholder="Username" class="form-control input-md">
+    
+  </div>
+</div>
+
+<!-- Text input-->
+<div class="form-group">
+  <label class="col-md-4 control-label" for="password">Password</label>  
+  <div class="col-md-4">
+  <input id="password" name="password" type="password" class="form-control input-md">
+    
+  </div>
+</div>
+
+<!-- Button -->
+<div class="form-group">
+  <label class="col-md-4 control-label" for="submit_reader"></label>
+  <div class="col-md-4">
+    <button id="submit_reader" name="submit_reader" class="btn btn-primary">Login</button>
+  </div>
+</div>
+
+</fieldset>
+</form>
+
+
 {% endblock %}
