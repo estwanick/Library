@@ -1,0 +1,15 @@
+{% extends "layout.html" %}
+{% block body %}
+
+<!-- Main jumbotron for a primary marketing message or call to action -->
+<div class="jumbotron">
+    <div class="container">
+        <h1>{{ context[0]['doc_name'] }}</h1>
+        <p> {{ context[0]['doc_desc'] }}</p>
+        <p><a class="btn btn-primary btn-lg" href="" role="button">Rent</a></p>
+    </div>
+</div>
+
+
+
+{% endblock %}

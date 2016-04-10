@@ -1,4 +1,55 @@
 {% extends "layout.html" %}
 {% block body %}
-<h1>Library</h1>
+{% if session.lib_logged_in %}
+<div class="row">
+  <div class="col-md-2"></div>
+  <div class="col-md-8">
+      <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    Document ID
+                </th>
+                <th>
+                    Document Copy
+                </th>
+                <th>
+                    Document Status
+                </th>
+                <th>
+                    Current Location
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                <td>
+                    {{ row['doc_id'] }}
+                </td>
+                <td>
+                    {{ row['doc_copy'] }}
+                </td>
+                <td>
+                    {{ row['doc_status'] }}
+                </td>
+                <td>
+                    {{ row['curr_location'] }}
+                </td>
+                <td>
+                    {{ row['doc_id'] }}
+                </td>
+            </tr>
+            {% else %}
+                <em>No Data</em>
+            {% endfor %}
+        </tbody>
+    </table>
+  </div>
+  <div class="col-md-2"></div>
+</div>
+{% else %}
+    <h3> No Access! </h3>
+{% endif %}
 {% endblock %}
+

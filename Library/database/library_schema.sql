@@ -25,7 +25,7 @@ create table Library(
 );
 
 create table Inventory(
-	lib_id int,
+	lib_id varchar,
 	doc_id int,
 	doc_copy int,
     curr_location int,

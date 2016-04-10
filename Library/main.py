@@ -10,6 +10,7 @@ SECRET_KEY = 'Development key'
 USERNAME = 'admin'
 PASSWORD = 'admin'
 
+
 #create application
 app = Flask(__name__)
 app.config.from_object(__name__)
@@ -51,10 +52,14 @@ def add_reader():
     
 @app.route('/reader_home')
 def reader_home():
-
-    # show a list of all books the reader currently has checked out.. 
-
-    return render_template('library_home.html')
+    # show a list of all books the reader has checked out 
+    # cur = g.db.execute('select * from inventory where lib_id = (?)', [session['lib_id']])
+    # rows = [dict(lib_id=row[0], doc_id=row[1], doc_copy=row[2], curr_location=row[3], doc_status=row[4]) for row in cur.fetchall()]
+    # print rows[0]['lib_id']
+    
+    rows = ''
+   
+    return render_template('reader_home.html', rows=rows)
         
 #display library sign up form   
 @app.route('/signup_library')
@@ -103,6 +108,7 @@ def user_login():
                 entries = [dict(username=row[0], password=row[1]) for row in cur.fetchall()]
                 session['reader_logged_in'] = True
                 session['reader_id'] = request.form['username']
+                return redirect( url_for('reader_home') )
             except:
                 print "could not find reader in DB"  
         elif request.form['radios'] == 'library':
@@ -133,10 +139,44 @@ def user_login():
     
 @app.route('/library_home')
 def library_home():
-
     # show a list of all books in inventory of this library and their status, location etc.. 
+    cur = g.db.execute('select * from inventory where lib_id = (?)', [session['lib_id']])
+    rows = [dict(lib_id=row[0], doc_id=row[1], doc_copy=row[2], curr_location=row[3], doc_status=row[4]) for row in cur.fetchall()]
+    # print rows[0]['lib_id']
+       
+    return render_template('library_home.html', rows=rows)
 
-    return render_template('library_home.html')
+@app.route('/inventory')
+def inventory():
+    # show a list of all books in inventory of this library and their status, location etc.. 
+    query = ''' select d.doc_title, i.doc_copy, i.doc_status, i.curr_location, i.doc_id
+            from inventory as i
+            inner join document as d 
+            on i.doc_id = d.doc_id 
+            '''
+    cur = g.db.execute( query )
+    rows = [dict( doc_name=row[0], doc_copy=row[1], doc_status=row[2], curr_location=row[3], doc_id=row[4]) for row in cur.fetchall()]
+    
+    return render_template('inventory.html', rows=rows)
+
+@app.route('/doc_info/<doc_id>')
+def doc_info(doc_id=None):
+    
+    if doc_id:
+        query = 'select * from document where doc_id = (?)'
+        cur = g.db.execute( query, [doc_id] )
+        rows = [dict( doc_name=row[1], doc_desc=row[3] ) for row in cur.fetchall()]
+    else:
+        pass
+
+    return render_template('doc_info.html', context=rows)
+    
+#Sign out of session
+@app.route('/signout')
+def signout():
+    session.pop('lib_logged_in', None)
+    session.pop('reader_logged_in', None)
+    return redirect(url_for('index'))
     
 @app.before_request
 def before_request():
