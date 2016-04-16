@@ -6,10 +6,10 @@
     <div class="container">
         <h1>{{ context[0]['doc_name'] }}</h1>
         <p> {{ context[0]['doc_desc'] }}</p>
-        <p><a class="btn btn-primary btn-lg" href="" role="button">Borrow</a></p>
+        <p> Copy: {{ context[0]['doc_copy'] }}</p>
+        <p> Location: {{ context[0]['curr_location'] }}</p>
+        <p><a class="btn btn-primary btn-lg" href="{{ url_for('borrow_doc') }}" role="button">Borrow</a></p>
     </div>
 </div>
-
-
 
 {% endblock %}

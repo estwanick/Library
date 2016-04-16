@@ -3,7 +3,7 @@
 <!-- Content will always show -->
 
 <div class="row column text-center">
-    <h2>Our Newest Products</h2>
+    <h2>Our Inventory</h2>
     <hr>
 </div>
 
@@ -43,8 +43,8 @@
                     {{ row['curr_location'] }}
                 </td>
                 <td>
-                    <a class="btn btn-primary btn-sm" role="button">Rent</a>
-                    <a class="btn btn-success btn-sm" href="{{ url_for('doc_info', doc_id=row['doc_id']) }}"" role="button">Info</a>  
+                    <a class="btn btn-primary btn-sm" href="{{ url_for('borrow',   doc_id=row['doc_id'], doc_copy=row['doc_copy'] ) }}" role="button">Borrow</a>
+                    <a class="btn btn-success btn-sm" href="{{ url_for('doc_info', doc_id=row['doc_id']) }}" role="button">Info</a>  
                 </td>
             </tr>
             {% else %}
@@ -57,3 +57,4 @@
 </div>
 
 {% endblock %}
+

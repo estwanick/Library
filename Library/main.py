@@ -1,7 +1,7 @@
 import sqlite3
 from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash 
 # from flask.ext.login  import LoginManager
-from flask.ext.bcrypt import Bcrypt 
+
 
 #Configuration
 DATABASE = 'database/library.db'
@@ -15,8 +15,6 @@ PASSWORD = 'admin'
 app = Flask(__name__)
 app.config.from_object(__name__)
 
-#Flask-Bcrypt
-bcrypt = Bcrypt(app) 
 
 #Home Page
 @app.route('/')
@@ -38,8 +36,11 @@ def add_reader():
 
     if request.method == 'POST':
         try:
-            g.db.execute('insert into Reader (reader_id, lib_id, reader_name, reader_type, password) values (?, ?, ?, ?, ?)', 
-                [ request.form['reader_id'], request.form['lib_id'], request.form['reader_name'], request.form['reader_type'], request.form['password'] ])
+            g.db.execute('insert into Reader (reader_id,reader_name, reader_type, password) values (?, ?, ?, ?)', 
+                [ request.form['reader_id'], request.form['reader_name'], request.form['reader_type'], request.form['password'] ])
+            g.db.commit()
+            g.db.execute('insert into Member_of (reader_id, lib_id) values (?, ?)', 
+                [ request.form['reader_id'], request.form['lib_id'] ])
             g.db.commit()
             return redirect( url_for('login', username=request.form['reader_id'], type="Reader") )
         except:
@@ -71,6 +72,7 @@ def add_library():
 
     if request.method == 'POST':
         try:
+
             g.db.execute('insert into Library (lib_id, lib_name, state, city, zip_code, password) values (?, ?, ?, ?, ?, ?)', 
                     [ request.form['lib_id'], request.form['lib_name'], request.form['lib_state'], request.form['lib_city'], request.form['lib_zip_code'], request.form['password'] ])
             g.db.commit()
@@ -154,6 +156,7 @@ def inventory():
             inner join document as d 
             on i.doc_id = d.doc_id 
             '''
+    
     cur = g.db.execute( query )
     rows = [dict( doc_name=row[0], doc_copy=row[1], doc_status=row[2], curr_location=row[3], doc_id=row[4]) for row in cur.fetchall()]
     
@@ -170,6 +173,33 @@ def doc_info(doc_id=None):
         pass
 
     return render_template('doc_info.html', context=rows)
+
+  
+@app.route('/borrow/<doc_id>/<doc_copy>')
+def borrow(doc_id=None, doc_copy=None):
+    
+    if doc_id and doc_copy:
+        query = ''' select d.doc_title, i.doc_copy, d.doc_type, i.curr_location, i.doc_id
+            from inventory as i
+            inner join document as d 
+            on i.doc_id = d.doc_id 
+            where i.doc_id   = (?) 
+              and i.doc_copy = (?)
+            '''
+        cur = g.db.execute( query, [doc_id, doc_copy] )
+        rows = [dict( doc_name=row[0], doc_copy=row[1], doc_desc=row[2], curr_location=row[3] ) for row in cur.fetchall()]
+    else:
+        pass
+
+    return render_template('borrow.html', context=rows)
+    
+@app.route('/borrow_doc')
+def borrow_doc():
+
+    print "Borrow document"
+
+    return redirect(url_for('inventory'))
+    
     
 #Sign out of session
 @app.route('/signout')

@@ -32,15 +32,28 @@ PRAGMA foreign_keys = ON;
 -- insert into inventory values ('newark', 1, 8, 'admin', 0);
 
 
--- insert into document values (2, "Divergent", "Book", "Action");
+insert into document values (1, "Divergent", "Book", "Action");
+insert into document values (2, "Harry Potter ", "Book", "Something");
 
--- insert into inventory values ('admin', 1, 5, 'admin', 0);
-insert into inventory values ('admin', 2, 0, 'admin', 0);
-insert into inventory values ('admin', 2, 1, 'admin', 0);
-insert into inventory values ('admin', 2, 2, 'admin', 0);
-insert into inventory values ('admin', 2, 3, 'admin', 0);
+-- -- insert into inventory values ('admin', 1, 5, 'admin', 0);
+-- insert into inventory values ('newark', 2, 4, 'newark', 0);
+-- insert into inventory values ('newark', 2, 5, 'newark', 0);
+-- insert into inventory values ('newark', 1, 9, 'newark', 0);
+-- insert into inventory values ('newark', 1, 10, 'newark', 0);
 
--- select * from library; 
--- select * from document;
-select * from inventory;
+-- -- select * from library; 
+-- -- select * from document;
+-- select * from inventory;
 
+-- drop table if exists Library;
+-- drop table if exists Inventory;
+-- drop table if exists Document;
+-- drop table if exists Document_Keyword;
+-- drop table if exists Author;
+-- drop table if exists Authoring;
+-- drop table if exists Reader;
+-- drop table if exists Borrow;
+-- drop table if exists Return;
+-- drop table if exists Waiting;
+-- drop table if exists Lend;
+-- drop table if exists Member_of;
