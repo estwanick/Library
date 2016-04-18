@@ -31,6 +31,8 @@
                 </form>
                 <ul class="nav navbar-nav navbar-right">
                         <li><a href=" {{ url_for('inventory') }}">Inventory</a></li>
+                        <li><a href=" {{ url_for('inventory') }}">Authors</a></li>
+                        <li><a href=" {{ url_for('inventory') }}">History</a></li>
                     {% if session.lib_logged_in %}
                         <li><a href=" {{ url_for('library_home') }}">Library Profile</a></li>
                         <li><a href="{{ url_for('signout') }}">Sign out</a></li>

@@ -4,11 +4,64 @@
 <div class="row">
   <div class="col-md-2"></div>
   <div class="col-md-8">
+      <h3>Waiting For</h3>
       <table class="table">
         <thead>
             <tr>
                 <th>
-                    Document ID
+                    Document
+                </th>
+                <th>
+                    Waiting Date
+                </th>
+                <th>
+                    Status
+                </th>
+                <th>
+                    Action
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                <td>
+                    {{ row['borrow_id'] }}
+                </td>
+                <td>
+                    {{ row['lib_id'] }}
+                </td>
+                <td>
+                    {{ row['lib_id'] }}
+                </td>
+                <td>
+                    <a class="btn btn-primary btn-sm" href="{{ url_for('doc_return', borrow_id=row['borrow_id'] ) }}" role="button">Return</a>
+                </td>
+            </tr>
+            {% else %}
+                <em>No Data</em>
+            {% endfor %}
+        </tbody>
+    </table>
+  </div>
+  <div class="col-md-2"></div>
+</div>
+
+<div class="row">
+  <div class="col-md-2"></div>
+  <div class="col-md-8">
+      <h3>Borrowed</h3>
+      <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    Borrow Id
+                </th>
+                <th>
+                    Borrowed From
+                </th>
+                <th>
+                    Document Name
                 </th>
                 <th>
                     Document Copy
@@ -17,7 +70,10 @@
                     Document Status
                 </th>
                 <th>
-                    Current Location
+                    Return By
+                </th>
+                <th>
+                    Action
                 </th>
             </tr>
         </thead>
@@ -25,7 +81,13 @@
             {% for row in rows %}
             <tr>
                 <td>
-                    {{ row['doc_id'] }}
+                    {{ row['borrow_id'] }}
+                </td>
+                <td>
+                    {{ row['lib_id'] }}
+                </td>
+                <td>
+                    {{ row['doc_title'] }}
                 </td>
                 <td>
                     {{ row['doc_copy'] }}
@@ -34,10 +96,62 @@
                     {{ row['doc_status'] }}
                 </td>
                 <td>
-                    {{ row['curr_location'] }}
+                    {{ row['exp_return'] }}
                 </td>
                 <td>
-                    {{ row['doc_id'] }}
+                    <a class="btn btn-primary btn-sm" href="{{ url_for('doc_return', borrow_id=row['borrow_id'] ) }}" role="button">Return</a>
+                </td>
+            </tr>
+            {% else %}
+                <em>No Data</em>
+            {% endfor %}
+        </tbody>
+    </table>
+  </div>
+  <div class="col-md-2"></div>
+</div>
+
+<div class="row">
+  <div class="col-md-2"></div>
+  <div class="col-md-8">
+      <h3>Returned</h3>
+      <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    Return Id
+                </th>
+                <th>
+                    Borrowed From
+                </th>
+                <th>
+                    Document Name
+                </th>
+                <th>
+                    Document Copy
+                </th>
+                <th>
+                    Return By
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for return in returnrows %}
+            <tr>
+                <td>
+                    {{ return['return_id'] }}
+                </td>
+                <td>
+                    {{ return['lib_id'] }}
+                </td>
+                <td>
+                    {{ return['doc_title'] }}
+                </td>
+                <td>
+                    {{ return['doc_copy'] }}
+                </td>
+                <td>
+                    {{ return['actual_return'] }}
                 </td>
             </tr>
             {% else %}
@@ -51,5 +165,6 @@
 {% else %}
     <h3> No Access! </h3>
 {% endif %}
+
 {% endblock %}
 

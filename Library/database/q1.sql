@@ -32,8 +32,8 @@ PRAGMA foreign_keys = ON;
 -- insert into inventory values ('newark', 1, 8, 'admin', 0);
 
 
-insert into document values (1, "Divergent", "Book", "Action");
-insert into document values (2, "Harry Potter ", "Book", "Something");
+-- insert into document values (1, "Divergent", "Book", "Action");
+-- insert into document values (2, "Harry Potter ", "Book", "Something");
 
 -- -- insert into inventory values ('admin', 1, 5, 'admin', 0);
 -- insert into inventory values ('newark', 2, 4, 'newark', 0);
@@ -57,3 +57,10 @@ insert into document values (2, "Harry Potter ", "Book", "Something");
 -- drop table if exists Waiting;
 -- drop table if exists Lend;
 -- drop table if exists Member_of;
+
+select b.lib_id, b.doc_id, b.doc_copy, b.borrow_date, b.exp_return
+    from borrow as b
+        where b.reader_id = 'reader1'
+            and not exists( select * 
+                            from return as r
+                                where r.return_id = b.borrow_id );

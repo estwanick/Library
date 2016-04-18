@@ -1,4 +1,4 @@
-import sqlite3
+import sqlite3, time, datetime
 from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash 
 # from flask.ext.login  import LoginManager
 
@@ -53,15 +53,78 @@ def add_reader():
     
 @app.route('/reader_home')
 def reader_home():
-    # show a list of all books the reader has checked out 
-    # cur = g.db.execute('select * from inventory where lib_id = (?)', [session['lib_id']])
-    # rows = [dict(lib_id=row[0], doc_id=row[1], doc_copy=row[2], curr_location=row[3], doc_status=row[4]) for row in cur.fetchall()]
-    # print rows[0]['lib_id']
+    # show a list of all books the reader has checked out
+    query = ''' select b.lib_id, b.doc_id, b.doc_copy, b.borrow_date, b.exp_return, d.doc_title, b.borrow_id 
+                from borrow as b
+                inner join document as d
+                   on b.doc_id = d.doc_id
+                where b.reader_id = (?)
+                  and not exists( select * 
+                                  from return as r
+                                    where r.return_id = b.borrow_id )
+            '''
     
-    rows = ''
-   
-    return render_template('reader_home.html', rows=rows)
-        
+    cur = g.db.execute( query, [session['reader_id']] ) 
+    # cur = g.db.execute('select lib_id, doc_id, doc_copy, borrow_date, exp_return from borrow where reader_id = (?)', [session['reader_id']] )
+    rows = [dict(lib_id=row[0], doc_id=row[1], doc_copy=row[2], borrow_date=row[3], exp_return=row[4], doc_title=row[5], borrow_id=row[6]) for row in cur.fetchall()]
+    todays_date = time.strftime("%Y-%m-%d")
+    for row in rows:
+        if row['exp_return'] < todays_date:
+            row['doc_status'] = 'Overdue'
+        else:
+            row['doc_status'] = 'Good'
+            
+    # show a list of all books the reader has returned
+    returnquery = ''' select r.lib_id, r.doc_id, r.doc_copy, r.actual_return, d.doc_title, r.return_id 
+                from return as r
+                inner join document as d
+                    on r.doc_id = d.doc_id
+                where r.reader_id = (?) 
+            '''
+    
+    returncur = g.db.execute( returnquery, [session['reader_id']] ) 
+    returnrows = [dict(lib_id=row[0], doc_id=row[1], doc_copy=row[2], actual_return=row[3], doc_title=row[4], return_id=row[5]) for row in returncur.fetchall()]
+    
+    
+    return render_template('reader_home.html', rows=rows, returnrows=returnrows)
+
+@app.route('/doc_return/<borrow_id>')
+def doc_return(borrow_id=None):
+    
+    if borrow_id:
+        query = ''' select d.doc_title, b.lib_id, b.doc_id, b.doc_copy, b.borrow_id
+            from borrow as b
+            inner join document as d 
+            on b.doc_id = d.doc_id 
+            where b.borrow_id = (?) 
+            '''
+        cur = g.db.execute( query, [borrow_id] )
+        rows = [dict( doc_name=row[0], lib_id=row[1], doc_id=row[2], doc_copy=row[3], borrow_id=row[4] ) for row in cur.fetchall()]
+        print rows
+    else:
+        pass
+
+    return render_template('return.html', context=rows)
+    
+@app.route('/dreturn', methods=['POST'])
+def dreturn():
+    todays_date = time.strftime("%Y-%m-%d")
+       
+    g.db.execute('insert into return (return_id, reader_id, lib_id, doc_id, doc_copy, actual_return) values (?, ?, ?, ?, ?, ?)', 
+                    [ request.form['borrow_id'], session['reader_id'], request.form['return_to'], request.form['doc_id'], request.form['doc_copy'], todays_date ])
+    g.db.commit()
+    
+    g.db.execute('delete from borrow where borrow_id = (?)', [ request.form['borrow_id'] ] )
+    g.db.commit()
+    
+    g.db.execute('update history set returned_to = (?), return_date = (?) where borrow_id = (?)', [ request.form['return_to'], todays_date, request.form['borrow_id'] ] )
+    g.db.commit()
+    
+    g.db.execute('update inventory set curr_location = (?) where doc_id = (?) and doc_copy = (?)', [ request.form['return_to'], request.form['doc_id'], request.form['doc_copy'] ] )
+    g.db.commit()
+     
+    return redirect( url_for('reader_home') )
+            
 #display library sign up form   
 @app.route('/signup_library')
 def signup_library():
@@ -110,6 +173,9 @@ def user_login():
                 entries = [dict(username=row[0], password=row[1]) for row in cur.fetchall()]
                 session['reader_logged_in'] = True
                 session['reader_id'] = request.form['username']
+                
+                #TODO: Get users preferred library
+                
                 return redirect( url_for('reader_home') )
             except:
                 print "could not find reader in DB"  
@@ -154,7 +220,13 @@ def inventory():
     query = ''' select d.doc_title, i.doc_copy, i.doc_status, i.curr_location, i.doc_id
             from inventory as i
             inner join document as d 
-            on i.doc_id = d.doc_id 
+            on i.doc_id = d.doc_id
+            where not exists(
+                select *
+                from borrow as b
+                where b.doc_id   = i.doc_id
+                  and b.doc_copy = i.doc_copy
+            ) 
             '''
     
     cur = g.db.execute( query )
@@ -179,7 +251,7 @@ def doc_info(doc_id=None):
 def borrow(doc_id=None, doc_copy=None):
     
     if doc_id and doc_copy:
-        query = ''' select d.doc_title, i.doc_copy, d.doc_type, i.curr_location, i.doc_id
+        query = ''' select d.doc_title, i.doc_copy, d.doc_type, i.curr_location, i.doc_id, i.lib_id
             from inventory as i
             inner join document as d 
             on i.doc_id = d.doc_id 
@@ -187,17 +259,38 @@ def borrow(doc_id=None, doc_copy=None):
               and i.doc_copy = (?)
             '''
         cur = g.db.execute( query, [doc_id, doc_copy] )
-        rows = [dict( doc_name=row[0], doc_copy=row[1], doc_desc=row[2], curr_location=row[3] ) for row in cur.fetchall()]
+        rows = [dict( doc_name=row[0], doc_copy=row[1], doc_desc=row[2], curr_location=row[3], doc_id=row[4], lib_id=row[5] ) for row in cur.fetchall()]
     else:
         pass
 
     return render_template('borrow.html', context=rows)
     
-@app.route('/borrow_doc')
-def borrow_doc():
+@app.route('/borrow_doc/<lib_id>/<doc_id>/<doc_copy>')
+def borrow_doc(lib_id=None,doc_id=None, doc_copy=None):
 
-    print "Borrow document"
-
+    todays_date = time.strftime("%Y-%m-%d")
+    date = datetime.datetime.strptime(todays_date, "%Y-%m-%d").date()
+    expected_return = date + datetime.timedelta(days=10)
+       
+    #Insert into borrow 
+    g.db.execute('insert into borrow (reader_id, lib_id, doc_id, doc_copy, borrow_date, exp_return) values (?, ?, ?, ?, ?, ?)', 
+                    [ session['reader_id'], lib_id, doc_id, doc_copy, todays_date, expected_return ])
+    g.db.commit()
+    
+    #Select current row to get borrow id
+    query = ''' select borrow_id
+            from borrow
+            where doc_id   = (?) 
+              and doc_copy = (?)
+            '''
+    cur = g.db.execute( query, [doc_id, doc_copy] )
+    rows = [dict( borrow_id=row[0] ) for row in cur.fetchall()]
+        
+    #Track borrow History  
+    g.db.execute('insert into history (borrow_id, reader_id, borrowed_from, doc_id, doc_copy, borrow_date) values (?, ?, ?, ?, ?, ?)', 
+                    [ rows[0]['borrow_id'], session['reader_id'], lib_id, doc_id, doc_copy, todays_date ])
+    g.db.commit()
+    
     return redirect(url_for('inventory'))
     
     

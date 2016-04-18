@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 {% block body %}
-<!-- Content will always show -->
 
+{% if session.reader_logged_in %}
 <div class="row column text-center">
     <h2>Our Inventory</h2>
     <hr>
@@ -55,6 +55,15 @@
   </div>
   <div class="col-md-2"></div>
 </div>
+{% else %}
+<div class="jumbotron">
+    <div class="container">
+        <h1>The Inventory</h1>
+        <p>Please Login to view our Inventory</p>
+        <p><a class="btn btn-primary btn-lg" href="{{ url_for('signup') }}" role="button">Sign up</a> <a class="btn btn-primary btn-lg" href="{{ url_for('login') }}"  role="button">Login</a></p>
+    </div>
+</div>
+{% endif %}
 
 {% endblock %}
 

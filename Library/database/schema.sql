@@ -15,6 +15,7 @@ drop table if exists Return;
 drop table if exists Waiting;
 drop table if exists Lend;
 drop table if exists Member_of;
+drop table if exists History;
 
 
 create table Library(
@@ -82,25 +83,36 @@ create table Reader(
 );
 
 create table Borrow(
-    reader_id int,
-    lib_id int,
+    borrow_id integer primary key autoincrement,
+    reader_id varchar,
+    lib_id varchar,
     doc_id int,
     doc_copy int,
     borrow_date date,
-    exp_return date,
-    primary key(reader_id, lib_id, doc_id, doc_copy, borrow_date)
+    exp_return date
     -- foreign key(reader_id) references Reader(reader_id),
     -- foreign key(lib_id) references Inventory(lib_id),
     -- foreign key(doc_id) references Inventory(doc_id)
 );
 
-create table Return(
-    reader_id int,
-    lib_id int,
+create table History(
+    borrow_id integer,
+    reader_id varchar,
+    borrowed_from varchar,
+    returned_to varchar,
     doc_id int,
     doc_copy int,
-    actual_return date,
-    primary key(reader_id, lib_id, doc_id, doc_copy, actual_return)
+    borrow_date date,
+    return_date date
+);
+
+create table Return(
+    return_id integer,
+    reader_id varchar,
+    lib_id varchar,
+    doc_id int,
+    doc_copy int,
+    actual_return date
     -- foreign key(reader_id) references Reader(reader_id),
     -- foreign key(lib_id) references Inventory(lib_id),
     -- foreign key(doc_id) references Inventory(doc_id)
