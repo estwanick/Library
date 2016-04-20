@@ -1,0 +1,83 @@
+{% extends "layout.html" %}
+{% block body %}
+
+<!-- Main jumbotron for a primary marketing message or call to action -->
+<div class="jumbotron">
+    <div class="container">
+
+        <form class="form-horizontal" action="{{ url_for('confirm_lend') }}" method="post">
+        <fieldset>
+            
+        <!-- Form Name -->
+        <legend>Return {{ context[0]['doc_name'] }}</legend>
+        
+        <div class="form-group">
+        <label class="col-md-4 control-label" for="doc_id">Document ID</label>  
+        <div class="col-md-4">
+        <input id="doc_id" name="doc_id" type="text" class="form-control input-md" value="{{ context[0]['doc_id'] }}" readonly>
+            
+        </div>
+        </div>
+        
+        <div class="form-group">
+        <label class="col-md-4 control-label" for="doc_copy">Document Copy</label>  
+        <div class="col-md-4">
+        <input id="doc_copy" name="doc_copy" type="text" class="form-control input-md" value="{{ context[0]['doc_copy'] }}" readonly>
+            
+        </div>
+        </div>
+        
+        <div class="form-group">
+        <label class="col-md-4 control-label" for="doc_desc">Document Description</label>  
+        <div class="col-md-4">
+        <input id="doc_desc" name="doc_desc" type="text" class="form-control input-md" value="{{ context[0]['doc_desc'] }}" readonly>
+            
+        </div>
+        </div>
+        
+        <div class="form-group">
+        <label class="col-md-4 control-label" for="from_lib">Ordered From</label>  
+        <div class="col-md-4">
+        <input id="from_lib" name="from_lib" type="text" class="form-control input-md" value="{{ context[0]['lib_id'] }}" readonly>
+            
+        </div>
+        </div>
+        
+        <div class="form-group">
+        <label class="col-md-4 control-label" for="to_lib">Deliver To</label>  
+        <div class="col-md-4">
+        <input id="to_lib" name="to_lib"" type="text" class="form-control input-md" value="{{ context[0]['deliver_to'] }}" readonly>
+            
+        </div>
+        </div>
+
+        <div class="form-group">
+        <label class="col-md-4 control-label" for="order_date">Order Date</label>  
+        <div class="col-md-4">
+        <input id="order_date" name="order_date" type="text" class="form-control input-md" value="{{ context[0]['order_date'] }}" readonly>
+            
+        </div>
+        </div>
+        
+        <div class="form-group">
+        <label class="col-md-4 control-label" for="delivery_date">Delivery Date</label>  
+        <div class="col-md-4">
+        <input id="delivery_date" name="delivery_date" type="text" class="form-control input-md" value="{{ context[0]['delivery_date'] }}" readonly>
+            
+        </div>
+        </div>
+
+        <!-- Button -->
+        <div class="form-group">
+        <label class="col-md-4 control-label" for="return"></label>
+        <div class="col-md-4">
+            <button id="return" name="return" class="btn btn-primary">Confirm</button>
+        </div>
+        </div>
+
+        </fieldset>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

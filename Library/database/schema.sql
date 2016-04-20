@@ -38,18 +38,17 @@ create table Inventory(
 	doc_id int,
 	doc_copy int,
     curr_location int,
-	doc_status int,
+	doc_status varchar,
 	primary key(doc_id, doc_copy)
     -- foreign key(lib_id) references Library(lib_id),
     -- foreign key(doc_id) references Document(doc_id)
 );
 
 create table Document(
-	doc_id int,
+	doc_id integer primary key autoincrement,
 	doc_title varchar,
 	doc_type varchar,
-	number_copies varchar,
-	primary key(doc_id)
+	number_copies varchar
 );
 
 create table Document_Keyword(
@@ -60,14 +59,13 @@ create table Document_Keyword(
 );
 
 create table Author(
-    author_id varchar,
-    author_name varchar,
-    primary key(author_id)
+    author_id integer primary key autoincrement,
+    author_name varchar
 );
 
 create table Authoring(
-    author_id int,
-    doc_id int,
+    author_id integer,
+    doc_id integer,
     primary key(author_id, doc_id)
     -- foreign key(author_id) references Author(author_id),
     -- foreign key(doc_id) references Document(doc_id)
@@ -126,13 +124,15 @@ create table Waiting(
 );
 
 create table Lend(
+    lend_id integer primary key autoincrement,
     to_lib int,
     from_lib int,
     order_date date,
     delivery_date date,
     doc_id int,
     doc_copy int,
-    primary key(to_lib, from_lib)
+    status varchar,
+    for_reader varchar
 );
 
 create table Member_of(

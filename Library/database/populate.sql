@@ -92,6 +92,7 @@ insert into inventory values ('library1', 3, 1, 'library1', 0);
 insert into inventory values ('library2', 3, 2, 'library2', 0);
 insert into inventory values ('library4', 3, 3, 'library4', 0);
 insert into inventory values ('library4', 3, 4, 'library4', 0);
+insert into inventory values ('library4', 3, 5, 'library4', 0);
 insert into inventory values ('library2', 4, 1, 'library2', 0);
 insert into inventory values ('library2', 4, 2, 'library2', 0);
 insert into inventory values ('library3', 4, 3, 'library3', 0);
@@ -112,26 +113,26 @@ insert into inventory values ('library4', 8, 1, 'library4', 0);
 insert into inventory values ('library4', 8, 2, 'library4', 0);
 insert into inventory values ('library4', 8, 3, 'library4', 0);
 -- Add Authors
-insert into author values ('author1','author1');
-insert into author values ('author2','author2');
-insert into author values ('author3','author3');
-insert into author values ('author4','author4');
+insert into author values (1,'author1');
+insert into author values (2,'author2');
+insert into author values (3,'author3');
+insert into author values (4,'author4');
 -- Add Authoring
-insert into authoring values ('author1', 1);
-insert into authoring values ('author1', 2);
-insert into authoring values ('author2', 3);
-insert into authoring values ('author2', 4);
-insert into authoring values ('author3', 5);
-insert into authoring values ('author3', 6);
-insert into authoring values ('author4', 7);
-insert into authoring values ('author4', 8);
+insert into authoring values (1, 1);
+insert into authoring values (1, 2);
+insert into authoring values (2, 3);
+insert into authoring values (2, 4);
+insert into authoring values (3, 5);
+insert into authoring values (3, 6);
+insert into authoring values (4, 7);
+insert into authoring values (4, 8);
 -- Add Waiting 
-insert into waiting values ('reader1', 1, '2016-04-16');
-insert into waiting values ('reader2', 1, '2016-04-16');
-insert into waiting values ('reader3', 1, '2016-04-16');
-insert into waiting values ('reader1', 2, '2016-04-16');
-insert into waiting values ('reader2', 2, '2016-04-16');
-insert into waiting values ('reader3', 2, '2016-04-16');
+-- insert into waiting values ('reader1', 1, '2016-04-16');
+-- insert into waiting values ('reader2', 1, '2016-04-16');
+-- insert into waiting values ('reader3', 1, '2016-04-16');
+-- insert into waiting values ('reader1', 2, '2016-04-16');
+-- insert into waiting values ('reader2', 2, '2016-04-16');
+-- insert into waiting values ('reader3', 2, '2016-04-16');
 -- Add Borrow
 
 -- Add Return

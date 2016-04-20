@@ -3,7 +3,7 @@
 {% if session.reader_logged_in %}
 
 {% endif %}
-{% if session.reader_logged_in %}
+{% if session.lib_logged_in %}
 <div class="row column text-center">
     <h2>Our Inventory</h2>
     <hr>
@@ -25,6 +25,9 @@
                     Document Status
                 </th>
                 <th>
+                    Owner
+                </th>
+                <th>
                     Current Location
                 </th>
             </tr>
@@ -42,15 +45,30 @@
                     {{ row['doc_status'] }}
                 </td>
                 <td>
+                    {{ row['lib_id'] }}
+                </td>
+                <td>
                     {{ row['curr_location'] }}
                 </td>
                 <td>
-                    <a class="btn btn-primary btn-sm" href="{{ url_for('borrow',   doc_id=row['doc_id'], doc_copy=row['doc_copy'] ) }}" role="button">Borrow</a>
-                    <a class="btn btn-success btn-sm" href="{{ url_for('doc_info', doc_id=row['doc_id']) }}" role="button">Info</a>  
+                    <a class="btn btn-primary btn-sm" href="{{ url_for('lend',   doc_id=row['doc_id'], doc_copy=row['doc_copy'] ) }}" role="button">Get</a>
                 </td>
             </tr>
             {% else %}
-                <em>No Data</em>
+                <tr>
+                    <td>
+                        No Data
+                    </td>
+                    <td>
+                        No Data
+                    </td>
+                    <td>
+                        No Data
+                    </td>
+                    <td>
+                        No Data
+                    </td>
+                </tr>
             {% endfor %}
         </tbody>
     </table>
@@ -70,7 +88,19 @@
         <thead>
             <tr>
                 <th>
-                    Document Title
+                    Document ID
+                </th>
+                <th>
+                    Document Copy
+                </th>
+                <th>
+                    Document Status
+                </th>
+                <th>
+                    Owner
+                </th>
+                <th>
+                    Current Location
                 </th>
             </tr>
         </thead>
@@ -81,11 +111,33 @@
                     {{ row['doc_name'] }}
                 </td>
                 <td>
-                    <a class="btn btn-primary btn-sm" href="{{ url_for('wait',   doc_id=row['doc_id'] ) }}" role="button">Wait List</a>
+                    {{ row['doc_copy'] }}
+                </td>
+                <td>
+                    {{ row['doc_status'] }}
+                </td>
+                <td>
+                    {{ row['lib_id'] }}
+                </td>
+                <td>
+                    {{ row['curr_location'] }}
                 </td>
             </tr>
             {% else %}
-                <em>No Data</em> 
+                <tr>
+                    <td>
+                        No Data
+                    </td>
+                    <td>
+                        No Data
+                    </td>
+                    <td>
+                        No Data
+                    </td>
+                    <td>
+                        No Data
+                    </td>
+                </tr>
             {% endfor %}
         </tbody>
     </table>
@@ -96,7 +148,7 @@
 <div class="jumbotron">
     <div class="container">
         <h1>The Inventory</h1>
-        <p>Please login as a reader to view our Inventory</p>
+        <p>Please login as a Library to view our Inventory</p>
         <p><a class="btn btn-primary btn-lg" href="{{ url_for('signup') }}" role="button">Sign up</a> <a class="btn btn-primary btn-lg" href="{{ url_for('login') }}"  role="button">Login</a></p>
     </div>
 </div>

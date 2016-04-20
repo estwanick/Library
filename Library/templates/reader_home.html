@@ -9,33 +9,39 @@
         <thead>
             <tr>
                 <th>
-                    Document
+                    Document Title
+                </th>
+                 <th>
+                    Document Copy
                 </th>
                 <th>
                     Waiting Date
                 </th>
                 <th>
-                    Status
+                    Delivery Date
                 </th>
                 <th>
-                    Action
+                    Status
                 </th>
             </tr>
         </thead>
         <tbody>
-            {% for row in rows %}
+            {% for row in waitrows %}
             <tr>
                 <td>
-                    {{ row['borrow_id'] }}
+                    {{ row['doc_title'] }}
                 </td>
                 <td>
-                    {{ row['lib_id'] }}
+                    {{ row['doc_copy'] }}
                 </td>
                 <td>
-                    {{ row['lib_id'] }}
+                    {{ row['wait_date'] }}
                 </td>
                 <td>
-                    <a class="btn btn-primary btn-sm" href="{{ url_for('doc_return', borrow_id=row['borrow_id'] ) }}" role="button">Return</a>
+                    {{ row['delivery_date'] }}
+                </td>
+                <td>
+                    {{ row['status'] }}
                 </td>
             </tr>
             {% else %}

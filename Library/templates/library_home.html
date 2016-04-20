@@ -1,14 +1,143 @@
 {% extends "layout.html" %}
 {% block body %}
 {% if session.lib_logged_in %}
+
 <div class="row">
   <div class="col-md-2"></div>
   <div class="col-md-8">
+      <h3>Documents being Borrowed</h3>
       <table class="table">
         <thead>
             <tr>
                 <th>
                     Document ID
+                </th>
+                <th>
+                    Document Copy
+                </th>
+                <th>
+                    Borrow Date
+                </th>
+                <th>
+                    Document Status
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in brows %}
+            <tr>
+                <td>
+                    {{ row['doc_id'] }}
+                </td>
+                <td>
+                    {{ row['doc_copy'] }}
+                </td>
+                <td>
+                    {{ row['borrow_date'] }}
+                </td>
+                <td>
+                    {{ row['doc_status'] }}
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+                 <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+  </div>
+  <div class="col-md-2"></div>
+</div>
+
+<div class="row">
+  <div class="col-md-2"></div>
+  <div class="col-md-8">
+      <h3>Documents at other Libraries</h3>
+      <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    Document ID
+                </th>
+                <th>
+                    Document Copy
+                </th>
+                <th>
+                    Document Status
+                </th>
+                <th>
+                    Current Location
+                </th>
+                <th>
+                    Action
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in arows %}
+            <tr>
+                <td>
+                    {{ row['doc_id'] }}
+                </td>
+                <td>
+                    {{ row['doc_copy'] }}
+                </td>
+                <td>
+                    {{ row['doc_status'] }}
+                </td>
+                <td>
+                    {{ row['curr_location'] }}
+                </td>
+                <td>
+                    <a class="btn btn-primary btn-sm" href="{{ url_for('retrieve', doc_id=row['doc_id'], doc_copy=row['doc_copy'] ) }}" role="button">Retrieve</a>
+                </td>
+            </tr>
+            {% else %}
+                <tr>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+                 <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+  </div>
+  <div class="col-md-2"></div>
+</div>
+
+<div class="row">
+  <div class="col-md-2"></div>
+  <div class="col-md-8">
+      <h3>Documents Home</h3>
+      <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    Document ID
+                </th>
+                <th>
+                    Document Title
                 </th>
                 <th>
                     Document Copy
@@ -28,6 +157,9 @@
                     {{ row['doc_id'] }}
                 </td>
                 <td>
+                    {{ row['doc_title'] }}
+                </td>
+                <td>
                     {{ row['doc_copy'] }}
                 </td>
                 <td>
@@ -36,18 +168,109 @@
                 <td>
                     {{ row['curr_location'] }}
                 </td>
-                <td>
-                    {{ row['doc_id'] }}
-                </td>
             </tr>
             {% else %}
-                <em>No Data</em>
+                <tr>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+                 <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+            </tr>
             {% endfor %}
         </tbody>
     </table>
   </div>
   <div class="col-md-2"></div>
 </div>
+
+<div class="row">
+  <div class="col-md-2"></div>
+  <div class="col-md-8">
+      <h3>Arriving Orders</h3>
+      <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    From Library
+                </th>
+                <th>
+                    Document ID
+                </th>
+                <th>
+                    Document Copy
+                </th>
+                <th>
+                    Order Date
+                </th>
+                <th>
+                    Delivery Date
+                </th>
+                <th>
+                    Status
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in orders %}
+            <tr>
+                <td>
+                    {{ row['from_lib'] }}
+                </td>
+                <td>
+                    {{ row['doc_id'] }}
+                </td>
+                <td>
+                    {{ row['doc_copy'] }}
+                </td>
+                <td>
+                    {{ row['order_date'] }}
+                </td>
+                <td>
+                    {{ row['delivery_date'] }}
+                </td>
+                <td>
+                    {{ row['doc_status'] }}
+                </td>
+            </tr>
+            {% else %}
+                <tr>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+                 <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+  </div>
+  <div class="col-md-2"></div>
+</div>
+
 {% else %}
     <h3> No Access! </h3>
 {% endif %}

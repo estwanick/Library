@@ -58,9 +58,78 @@ PRAGMA foreign_keys = ON;
 -- drop table if exists Lend;
 -- drop table if exists Member_of;
 
-select b.lib_id, b.doc_id, b.doc_copy, b.borrow_date, b.exp_return
-    from borrow as b
-        where b.reader_id = 'reader1'
-            and not exists( select * 
-                            from return as r
-                                where r.return_id = b.borrow_id );
+
+-- select d.doc_id, d.doc_title, d.doc_type, d.number_copies, u.author_name, max(i.doc_copy)
+--                 from document as d
+--                 inner join authoring as a
+--                     on d.doc_id = a.doc_id
+--                 inner join author as u
+--                     on a.author_id = u.author_id
+--                 inner join inventory as i
+--                     on d.doc_id = i.doc_id
+--                 group by i.doc_id;
+
+-- select *
+-- from document as d
+-- where not exists
+-- (
+--     select i.doc_id
+--     from inventory as i 
+--     where i.lib_id = "library1"
+--     and i.doc_id = d.doc_id 
+-- )
+-- and exists
+-- (
+--     select i.doc_id
+--     from inventory as i 
+--     where i.lib_id <> "library1"
+--     and i.doc_id = d.doc_id 
+-- );
+
+-- select i.lib_id, i.doc_id, max( i.doc_copy )
+-- from inventory as i
+-- where i.lib_id <> 1
+--   and i.doc_id = 1
+--   and not exists(
+--     select *
+--     from borrow as b
+--     where b.doc_id = i.doc_id
+--         and b.doc_copy = i.doc_copy );
+
+-- select *
+-- from waiting as w
+-- where w.reader_id = 'reader1'
+--   and exists(
+--     select *
+--     from lend as l
+--     where l.for_reader = w.reader_id
+--       and l.status <> 'complete'
+-- );
+
+--  select d.doc_title, d.doc_id
+--             from document as d
+--             where not exists(
+--                 select i.doc_id
+--                 from inventory as i 
+--                 where i.lib_id = (?)
+--                 and i.doc_id = d.doc_id 
+--             )
+--             and exists
+--             (
+--                 select i.doc_id
+--                 from inventory as i 
+--                 where i.lib_id <> "library1"
+--                 and i.doc_id = d.doc_id 
+--             )and not exists
+--             (
+--                 select *
+--                 from waiting as w
+--                 where w.reader_id = 'reader1'
+--                   and w.doc_id = d.doc_id
+--             ); 
+
+select d.doc_title, l.doc_id, l.doc_copy, l.order_date, l.delivery_date, l.status
+                    from lend as l 
+                    inner join document as d
+                        on l.doc_id = d.doc_id
+                    where l.for_reader = 'reader1';
