@@ -128,8 +128,11 @@ PRAGMA foreign_keys = ON;
 --                   and w.doc_id = d.doc_id
 --             ); 
 
-select d.doc_title, l.doc_id, l.doc_copy, l.order_date, l.delivery_date, l.status
-                    from lend as l 
-                    inner join document as d
-                        on l.doc_id = d.doc_id
-                    where l.for_reader = 'reader1';
+-- select d.doc_title, l.doc_id, l.doc_copy, l.order_date, l.delivery_date, l.status
+--                     from lend as l 
+--                     inner join document as d
+--                         on l.doc_id = d.doc_id
+--                     where l.for_reader = 'reader1';
+
+update lend set delivery_date = '2016-04-20' where doc_id = 4;
+update lend set status = 'complete' where doc_id = 4;

@@ -91,18 +91,18 @@ def reader_home():
                     inner join document as d
                         on l.doc_id = d.doc_id
                     where l.for_reader = (?)
+                      and l.status = "processing"
             '''
     
     waitcur = g.db.execute( waitquery, [session['reader_id']] ) 
     waitrows = [dict(doc_title=row[0], doc_id=row[1], doc_copy=row[2], wait_date=row[3], delivery_date=row[4], status=row[5]) for row in waitcur.fetchall()]
-    print session['reader_id']
-    print waitrows
     
     #When user logs in and the delivery_date >= todays date then create a lineitem in Borrow for that reader/document/copy
     #Libraries will hold documents until readers log in 
     for row in waitrows:
-        if row['delivery_date'] >= todays_date:
+        if row['delivery_date'] <= todays_date:
             #Move to borrow 
+            print 'move to borrow!'
     
     return render_template('reader_home.html', rows=rows, returnrows=returnrows, waitrows=waitrows)
 
@@ -175,7 +175,11 @@ def add_to_inventory(doc_id=None):
     get_max_copies = g.db.execute('select number_copies from document where doc_id = (?)', [ doc_id ])
     max_copy = get_max_copies.fetchone()[0]
     print max_copy
-        
+    
+    if doc_copy == None:
+        doc_copy = 0
+    
+    #Needs to be tested and fixed
     if int(max_copy) == int(doc_copy):
         flash('No more copies available','error')
         return redirect( url_for('document') )
@@ -381,7 +385,7 @@ def wait(doc_id=None):
     
     #Create lend entry using available document 
     g.db.execute('insert into lend (to_lib, from_lib, order_date, delivery_date, doc_id, doc_copy, status, for_reader) values (?, ?, ?, ?, ?, ?, ?, ?)', 
-                    [ session['lib_id'], rows[0]['lib_id'], todays_date, delivery_date, rows[0]['doc_id'], rows[0]['doc_copy'], "In Process" , session['reader_id'] ])
+                    [ session['lib_id'], rows[0]['lib_id'], todays_date, delivery_date, rows[0]['doc_id'], rows[0]['doc_copy'], "processing" , session['reader_id'] ])
     g.db.commit()
     
     #Document/Copy being delivered as unavailable until it is delivered
