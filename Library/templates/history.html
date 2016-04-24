@@ -1,0 +1,115 @@
+{% extends "layout.html" %}
+{% block body %}
+
+{% if session.lib_logged_in %}
+<div class="row column text-center">
+    <h2>Borrow History</h2>
+    <hr>
+</div>
+
+<div class="row">
+  <div class="col-md-2"></div>
+  <div class="col-md-8">
+      <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    Reader Id
+                </th>
+                <th>
+                    Document Title
+                </th>
+                <th>
+                    Document Id
+                </th>
+                <th>
+                    Document Copy
+                </th>
+                <th>
+                    Borrowed From
+                </th>
+                <th>
+                    Returned To
+                </th>
+                <th>
+                    Borrowed Date
+                </th>
+                <th>
+                    Return Date
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %} 
+            <tr>
+                <td>
+                    {{ row['reader_id'] }}
+                </td>
+                <td>
+                    {{ row['doc_title'] }}
+                </td>
+                <td>
+                    {{ row['doc_id'] }}
+                </td>
+                <td>
+                    {{ row['doc_copy'] }}
+                </td>
+                <td>
+                    {{ row['borrowed_from'] }}
+                </td>
+                <td>
+                    {{ row['returned_to'] }}
+                </td>
+                <td>
+                    {{ row['borrow_date'] }}
+                </td>
+                <td>
+                    {{ row['return_date'] }}
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+            </tr>   
+            {% endfor %}
+        </tbody>
+    </table>
+  </div>
+  <div class="col-md-2"></div>
+</div>
+
+{% else %}
+<div class="jumbotron">
+    <div class="container">
+        <h1>The Library</h1>
+        <p>Please login as a library to view the Borrow History</p>
+        <p><a class="btn btn-primary btn-lg" href="{{ url_for('signup') }}" role="button">Sign up</a> <a class="btn btn-primary btn-lg" href="{{ url_for('login') }}"  role="button">Login</a></p>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+

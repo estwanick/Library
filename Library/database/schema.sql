@@ -38,7 +38,6 @@ create table Inventory(
 	doc_id int,
 	doc_copy int,
     curr_location int,
-	doc_status varchar,
 	primary key(doc_id, doc_copy)
     -- foreign key(lib_id) references Library(lib_id),
     -- foreign key(doc_id) references Document(doc_id)

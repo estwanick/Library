@@ -5,9 +5,14 @@
 <div class="jumbotron">
     <div class="container">
         <h1>{{ context[0]['doc_name'] }}</h1>
-        <p> {{ context[0]['doc_desc'] }}</p>
-        <p><a class="btn btn-primary btn-lg" href="" role="button">Borrow</a></p>
+        <p> {{ context[0]['doc_type'] }}</p>
+        <p><a class="btn btn-primary btn-lg" href="{{ url_for('borrow_doc', lib_id=session['lib_id'], doc_id=context[0]['doc_id'], doc_copy=context[0]['doc_copy'] ) }}" role="button">Borrow</a></p>
     </div>
+</div>
+
+<div class="row column text-center">
+    <h2>Similar Documents</h2>
+    <hr>
 </div>
 
 

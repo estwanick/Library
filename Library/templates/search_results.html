@@ -1,0 +1,83 @@
+{% extends "layout.html" %}
+{% block body %}
+{% if session.reader_logged_in %}
+
+{% endif %}
+{% if session.reader_logged_in or session.lib_logged_in %}
+<div class="row column text-center">
+    <h2>Search Results for term ( {{ searchterm }} )</h2>
+    <hr>
+</div>
+
+<div class="row">
+  <div class="col-md-2"></div>
+  <div class="col-md-8">
+      <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    Document Title
+                </th>
+                <th>
+                    Author Name
+                </th>
+                <th>
+                    Action
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                <td>
+                    {{ row['doc_title'] }}
+                </td>
+                <td>
+                    {{ row['author_name'] }}
+                </td>
+                <td>
+                    {% if session.reader_logged_in %}
+                        <a class="btn btn-primary btn-sm" href="{{ url_for('borrow',   doc_id=row['doc_id']) }}" role="button">Borrow</a>
+                        <a class="btn btn-success btn-sm" href="{{ url_for('doc_info', doc_id=row['doc_id']) }}" role="button">Info</a> 
+                    {% endif %}
+                    {% if session.lib_logged_in %}
+                        <a class="btn btn-success btn-sm" href="{{ url_for('add_to_inventory', doc_id=row['doc_id']) }}" role="button">Add to Inventory</a>  
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+                <tr>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+  </div>
+  <div class="col-md-2"></div>
+</div>
+
+
+
+{% else %}
+<div class="jumbotron">
+    <div class="container">
+        <h1>Search Results</h1>
+        <p>Please login as a Reader or Library </p>
+        <p><a class="btn btn-primary btn-lg" href="{{ url_for('signup') }}" role="button">Sign up</a> <a class="btn btn-primary btn-lg" href="{{ url_for('login') }}"  role="button">Login</a></p>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+

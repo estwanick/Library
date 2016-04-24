@@ -134,5 +134,149 @@ PRAGMA foreign_keys = ON;
 --                         on l.doc_id = d.doc_id
 --                     where l.for_reader = 'reader1';
 
-update lend set delivery_date = '2016-04-20' where doc_id = 4;
-update lend set status = 'complete' where doc_id = 4;
+-- update lend set delivery_date = '2016-04-20' where doc_id = 4;
+--  update lend set delivery_date = '2016-04-20' where doc_id = '7';
+-- --, max( i.doc_copy )
+-- select i.lib_id, i.doc_id, max( i.doc_copy )
+--             from inventory as i
+--             where i.lib_id <> 'library1'
+--             and i.doc_id = 2
+--             and not exists
+--             (
+--                 select *
+--                 from borrow as b
+--                 where b.doc_id = i.doc_id
+--                   and b.doc_copy = i.doc_copy 
+--             )
+--             and not exists
+--             (
+--                 select *
+--                 from lend as l
+--                 where l.doc_id = i.doc_id
+--                   and l.doc_copy = i.doc_copy
+--                   and l.status = 'processing'
+--             );
+
+-- select i.lib_id, i.doc_id, i.doc_copy, i.curr_location, i.doc_status, d.doc_title
+--                 from inventory as i
+--                 inner join document as d 
+--                     on d.doc_id = i.doc_id
+--                 where lib_id = 'library1' 
+--                   and curr_location = 'library1'
+--                   and not exists(
+--                       select *
+--                       from borrow as b
+--                       where b.doc_id   = i.doc_id
+--                         and b.doc_copy = i.doc_copy  
+--                   );
+
+-- select ar.author_name, d.doc_title, d.doc_id, k.keyword
+-- from document as d
+-- left join document_keyword as k
+--     on d.doc_id = k.doc_id
+-- left join authoring as au 
+--     on au.doc_id = d.doc_id
+-- left join author as ar 
+--   on ar.author_id = au.author_id
+-- where k.keyword  like '%james%'
+--   or d.doc_title like '%james%'
+--   or ar.author_name like '%james%'
+--   group by doc_title;
+  
+  
+  -- select d.doc_title, i.doc_copy, d.doc_type, i.curr_location, i.doc_id, i.lib_id
+  --           from inventory as i
+  --           inner join document as d 
+  --           on i.doc_id = d.doc_id 
+  --           where i.doc_id   = (?)
+
+-- insert into borrow values (10, 'reader1', 'library1', 1, 4, '2016-1-1', '2016-1-10');
+
+-- select d.doc_title, max( i.doc_copy ), i.curr_location, i.doc_id
+--             from inventory as i
+--             inner join document as d 
+--             on i.doc_id = d.doc_id
+--             where i.lib_id = 'library1'
+--               and i.curr_location = 'library1'
+--               and i.doc_id = 5
+--             and not exists
+--             (
+--                 select *
+--                 from borrow as b
+--                 where b.doc_id   = i.doc_id
+--                   and b.doc_copy = i.doc_copy
+--             )
+--             and not exists
+--             (
+--                 select *
+--                 from lend as l
+--                 where l.doc_id = i.doc_id
+--                   and l.doc_copy = i.doc_copy
+--                   and l.status = 'processing'
+--             );
+
+
+-- insert into borrow values (9, 'reader1', 'library1', 1, 8, '2016-1-1', '2016-1-10');
+
+-- select * from borrow;
+
+
+-- select d.doc_title, i.doc_copy, i.curr_location, i.doc_id
+--             from inventory as i
+--             inner join document as d 
+--             on i.doc_id = d.doc_id
+--             where i.lib_id = 'library1'
+--               and i.curr_location = 'library1'
+--             and not exists
+--             (
+--                 select *
+--                 from borrow as b
+--                 where b.doc_id   = i.doc_id
+--                   and b.doc_copy = i.doc_copy
+--             )
+--             and not exists
+--             (
+--                 select *
+--                 from lend as l
+--                 where l.doc_id = i.doc_id
+--                   and l.doc_copy = i.doc_copy
+--                   and l.status = 'processing'
+--             );
+
+-- select d.doc_title, max( i.doc_copy ), d.doc_type, i.curr_location, i.doc_id, i.lib_id
+--             from inventory as i
+--             inner join document as d 
+--                 on i.doc_id = d.doc_id
+--             where i.lib_id = 'library1'
+--               and i.curr_location = 'library1'
+--               and i.doc_id = 5
+--             and not exists
+--             (
+--                 select *
+--                 from borrow as b
+--                 where b.doc_id   = i.doc_id
+--                   and b.doc_copy = i.doc_copy
+--             )
+--             and not exists
+--             (
+--                 select *
+--                 from lend as l
+--                 where l.doc_id = i.doc_id
+--                   and l.doc_copy = i.doc_copy
+--                   and l.status = 'processing'
+--             );
+
+select ar.author_name, d.doc_title, i.doc_id, i.doc_copy, i.lib_id
+            from inventory as i
+            inner join document as d
+                on i.doc_id = d.doc_id
+            inner join authoring as au 
+                on i.doc_id = au.doc_id
+            inner join author as ar 
+                on au.author_id = ar.author_id
+            left join document_keyword as k
+                on i.doc_id = k.doc_id  
+            where i.lib_id = 'library1'
+              and i.curr_location = 'library1'
+              and ( d.doc_title like (?) or k.keyword like (?) or ar.author_id like (?))
+            group by i.doc_id;

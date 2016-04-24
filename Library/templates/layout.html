@@ -23,9 +23,9 @@
                 <a class="navbar-brand" href="{{ url_for('index') }}">The Library</a>
             </div>
             <div id="navbar" class="navbar-collapse collapse">
-                <form class="navbar-form navbar-right">
+                <form class="navbar-form navbar-right" action="{{ url_for('search_results') }}" method="post">
                     <div class="form-group">
-                        <input type="text" placeholder="Harry Potter" class="form-control">
+                        <input id="search_term" name="search_term" type="text" placeholder="Harry Potter" class="form-control">
                     </div>
                     <button type="submit" class="btn btn-success">Search</button>
                 </form>
@@ -35,13 +35,13 @@
                     <li><a href=" {{ url_for('author') }}">Authors</a></li>
                     <li><a href=" {{ url_for('document') }}">Documents</a></li>
                     <li><a href=" {{ url_for('library_lend') }}">Place Order</a></li>
-                    <li><a href=" {{ url_for('inventory') }}">History</a></li>
+                    <li><a href=" {{ url_for('history') }}">History</a></li>
                         <li><a href=" {{ url_for('library_home') }}">Library Profile</a></li>
                         <li><a href="{{ url_for('signout') }}">Sign out ({{ session['lib_id'] }})</a></li>
                     {% elif session.reader_logged_in  %}
                         <li><a href=" {{ url_for('inventory') }}">Inventory</a></li>    
                         <li><a href=" {{ url_for('reader_home') }}">Reader Profile</a></li>
-                        <li><a href="{{ url_for('signout') }}">Sign out ({{ session['reader_id'] }})</a></li>
+                        <li><a href="{{ url_for('signout') }}">Sign out ({{ session['reader_id'] }} -> {{ session['lib_id'] }})</a></li>
                     {% else %}
                         <li><a href="{{ url_for('login') }}">Login</a></li>
                     {% endif %}
@@ -53,6 +53,11 @@
 
 
 {% block body %}{% endblock %}
+
+<div id="footer" class="jumbotron">
+    <div class="container">
+    </div>
+</div>
 
 </body>
 </html>

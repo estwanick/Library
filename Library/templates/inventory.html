@@ -16,13 +16,10 @@
         <thead>
             <tr>
                 <th>
-                    Document ID
+                    Document Id
                 </th>
                 <th>
-                    Document Copy
-                </th>
-                <th>
-                    Document Status
+                    Document Name
                 </th>
                 <th>
                     Current Location
@@ -33,19 +30,16 @@
             {% for row in rows %}
             <tr>
                 <td>
+                    {{ row['doc_id'] }}
+                </td>
+                <td>
                     {{ row['doc_name'] }}
-                </td>
-                <td>
-                    {{ row['doc_copy'] }}
-                </td>
-                <td>
-                    {{ row['doc_status'] }}
                 </td>
                 <td>
                     {{ row['curr_location'] }}
                 </td>
                 <td>
-                    <a class="btn btn-primary btn-sm" href="{{ url_for('borrow',   doc_id=row['doc_id'], doc_copy=row['doc_copy'] ) }}" role="button">Borrow</a>
+                    <a class="btn btn-primary btn-sm" href="{{ url_for('borrow',   doc_id=row['doc_id']) }}" role="button">Borrow</a>
                     <a class="btn btn-success btn-sm" href="{{ url_for('doc_info', doc_id=row['doc_id']) }}" role="button">Info</a>  
                 </td>
             </tr>

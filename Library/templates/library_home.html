@@ -19,7 +19,7 @@
                     Borrow Date
                 </th>
                 <th>
-                    Document Status
+                    Expected Return
                 </th>
             </tr>
         </thead>
@@ -36,7 +36,7 @@
                     {{ row['borrow_date'] }}
                 </td>
                 <td>
-                    {{ row['doc_status'] }}
+                    {{ row['exp_return'] }}
                 </td>
             </tr>
             {% else %}
@@ -95,9 +95,6 @@
                     {{ row['doc_copy'] }}
                 </td>
                 <td>
-                    {{ row['doc_status'] }}
-                </td>
-                <td>
                     {{ row['curr_location'] }}
                 </td>
                 <td>
@@ -134,16 +131,13 @@
         <thead>
             <tr>
                 <th>
-                    Document ID
-                </th>
-                <th>
                     Document Title
                 </th>
                 <th>
-                    Document Copy
+                    Document ID
                 </th>
                 <th>
-                    Document Status
+                    Document Copy
                 </th>
                 <th>
                     Current Location
@@ -154,16 +148,13 @@
             {% for row in rows %}
             <tr>
                 <td>
-                    {{ row['doc_id'] }}
-                </td>
-                <td>
                     {{ row['doc_title'] }}
                 </td>
                 <td>
-                    {{ row['doc_copy'] }}
+                    {{ row['doc_id'] }}
                 </td>
                 <td>
-                    {{ row['doc_status'] }}
+                    {{ row['doc_copy'] }}
                 </td>
                 <td>
                     {{ row['curr_location'] }}
@@ -223,6 +214,83 @@
         </thead>
         <tbody>
             {% for row in orders %}
+            <tr>
+                <td>
+                    {{ row['from_lib'] }}
+                </td>
+                <td>
+                    {{ row['doc_id'] }}
+                </td>
+                <td>
+                    {{ row['doc_copy'] }}
+                </td>
+                <td>
+                    {{ row['order_date'] }}
+                </td>
+                <td>
+                    {{ row['delivery_date'] }}
+                </td>
+                <td>
+                    {{ row['doc_status'] }}
+                </td>
+            </tr>
+            {% else %}
+                <tr>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+                 <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+  </div>
+  <div class="col-md-2"></div>
+</div>
+
+<div class="row">
+  <div class="col-md-2"></div>
+  <div class="col-md-8">
+      <h3>Completed Orders</h3>
+      <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    From Library
+                </th>
+                <th>
+                    Document ID
+                </th>
+                <th>
+                    Document Copy
+                </th>
+                <th>
+                    Order Date
+                </th>
+                <th>
+                    Delivery Date
+                </th>
+                <th>
+                    Status
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in corders %}
             <tr>
                 <td>
                     {{ row['from_lib'] }}

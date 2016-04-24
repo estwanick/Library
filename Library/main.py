@@ -28,8 +28,36 @@ def signup():
 
 #display reader sign up form   
 @app.route('/signup_reader')
-def signup_reader():    
+def signup_reader():
     return render_template('signup_reader.html')
+
+@app.route('/search_results', methods=['POST'])
+def search_results():
+
+    searchterm = request.form['search_term']
+    searchstring = '%' + searchterm + '%'
+    #Documents available to be borrowed
+    query = ''' 
+            select ar.author_name, d.doc_title, i.doc_id, i.doc_copy, i.lib_id
+            from inventory as i
+            inner join document as d
+                on i.doc_id = d.doc_id
+            inner join authoring as au 
+                on i.doc_id = au.doc_id
+            inner join author as ar 
+                on au.author_id = ar.author_id
+            left join document_keyword as k
+                on i.doc_id = k.doc_id  
+            where ( d.doc_title like (?) or k.keyword like (?) or ar.author_id like (?))
+            group by i.doc_id
+            '''
+    
+    cur = g.db.execute( query, [  searchstring, searchstring, searchstring ]  ) 
+    rows = [dict(author_name=row[0], doc_title=row[1], doc_id=row[2], keyword=row[3]) for row in cur.fetchall()]
+    
+    print rows
+    
+    return render_template('search_results.html', searchterm=searchterm, rows=rows)
     
 @app.route('/add_reader', methods=['POST'])
 def add_reader():
@@ -53,6 +81,11 @@ def add_reader():
     
 @app.route('/reader_home')
 def reader_home():
+
+    todays_date = time.strftime("%Y-%m-%d")
+    date = datetime.datetime.strptime(todays_date, "%Y-%m-%d").date()
+    expected_return = date + datetime.timedelta(days=10)
+
     # show a list of all books the reader has checked out
     query = ''' select b.lib_id, b.doc_id, b.doc_copy, b.borrow_date, b.exp_return, d.doc_title, b.borrow_id 
                 from borrow as b
@@ -67,7 +100,7 @@ def reader_home():
     cur = g.db.execute( query, [session['reader_id']] ) 
     # cur = g.db.execute('select lib_id, doc_id, doc_copy, borrow_date, exp_return from borrow where reader_id = (?)', [session['reader_id']] )
     rows = [dict(lib_id=row[0], doc_id=row[1], doc_copy=row[2], borrow_date=row[3], exp_return=row[4], doc_title=row[5], borrow_id=row[6]) for row in cur.fetchall()]
-    todays_date = time.strftime("%Y-%m-%d")
+
     for row in rows:
         if row['exp_return'] < todays_date:
             row['doc_status'] = 'Overdue'
@@ -101,8 +134,17 @@ def reader_home():
     #Libraries will hold documents until readers log in 
     for row in waitrows:
         if row['delivery_date'] <= todays_date:
-            #Move to borrow 
-            print 'move to borrow!'
+            #Insert into borrow 
+            g.db.execute('insert into borrow (reader_id, lib_id, doc_id, doc_copy, borrow_date, exp_return) values (?, ?, ?, ?, ?, ?)', 
+                            [ session['reader_id'], session['lib_id'], row['doc_id'], row['doc_copy'], todays_date, expected_return ])
+            g.db.commit()
+            #Delete from wait
+            g.db.execute('delete from waiting where reader_id = (?) and doc_id = (?)', [ session['reader_id'], row['doc_id']])
+            g.db.commit()
+            #Update lend status to complete
+            g.db.execute('update lend set status = (?)', [ 'complete' ] )
+            g.db.commit() 
+            
     
     return render_template('reader_home.html', rows=rows, returnrows=returnrows, waitrows=waitrows)
 
@@ -198,6 +240,8 @@ def add_to_inventory(doc_id=None):
 @app.route('/login/<username>/<type>/')
 def login(username=None, type=None):
 
+    signout()
+
     context = {
         "username": username,
         "type": type
@@ -219,7 +263,11 @@ def user_login():
                 session['reader_logged_in'] = True
                 session['reader_id'] = request.form['username']
                 
-                #TODO: Get users preferred library
+                #Get users preferred library
+                cur = g.db.execute('select lib_id from member_of where reader_id = (?)', 
+                    [ request.form['username'] ])
+                entries = [dict(lib_id=row[0]) for row in cur.fetchall()]
+                session['lib_id'] = entries[0]['lib_id']
                 
                 return redirect( url_for('reader_home') )
             except:
@@ -253,14 +301,20 @@ def user_login():
 @app.route('/library_home')
 def library_home():
     # show a list of all books in inventory of this library and their status, location etc.. 
-    query = ''' select i.lib_id, i.doc_id, i.doc_copy, i.curr_location, i.doc_status, d.doc_title
+    query = ''' select i.lib_id, i.doc_id, i.doc_copy, i.curr_location,  d.doc_title
                 from inventory as i
                 inner join document as d 
                     on d.doc_id = i.doc_id
                 where lib_id = (?) and curr_location = (?)
+                  and not exists(
+                      select *
+                      from borrow as b
+                      where b.doc_id   = i.doc_id
+                        and b.doc_copy = i.doc_copy  
+                  );
             '''
     cur = g.db.execute( query, [ session['lib_id'], session['lib_id'] ])
-    rows = [dict(lib_id=row[0], doc_id=row[1], doc_copy=row[2], curr_location=row[3], doc_status=row[4], doc_title=row[5]) for row in cur.fetchall()]
+    rows = [dict(lib_id=row[0], doc_id=row[1], doc_copy=row[2], curr_location=row[3], doc_title=row[4]) for row in cur.fetchall()]
     #Documents at other libraries
     query = ''' select * 
                 from inventory as i
@@ -270,7 +324,7 @@ def library_home():
                   )
             '''
     acur = g.db.execute( query, [ session['lib_id'], session['lib_id'] ])
-    arows = [dict(lib_id=row[0], doc_id=row[1], doc_copy=row[2], curr_location=row[3], doc_status=row[4]) for row in acur.fetchall()]
+    arows = [dict(lib_id=row[0], doc_id=row[1], doc_copy=row[2], curr_location=row[3]) for row in acur.fetchall()]
     #Documents being borrowed
     bcur = g.db.execute('select * from borrow where lib_id = (?)', [ session['lib_id'] ])
     brows = [dict(borrow_id=row[0], reader_id=row[1], lib_id=row[2], doc_id=row[3], doc_copy=row[4], borrow_date=row[5], exp_return=row[6]) for row in bcur.fetchall()]
@@ -282,10 +336,11 @@ def library_home():
         else:
             row['doc_status'] = 'Good'
             
-     #Orders Placed
+     #Orders Placed that are in process
     query = ''' select from_lib, order_date, delivery_date, doc_id, doc_copy, status, lend_id
                 from lend
                 where to_lib = (?)
+                  and status <> 'complete'
             '''
     ocur = g.db.execute( query, [ session['lib_id'] ])
     orders = [dict(from_lib=row[0], order_date=row[1], delivery_date=row[2], doc_id=row[3], doc_copy=row[4], doc_status=row[5], lend_id=row[6]) for row in ocur.fetchall()]
@@ -293,13 +348,21 @@ def library_home():
     #Process Orders
     for row in orders:
         if row['delivery_date'] <= todays_date:
-            row['doc_status'] = 'Complete'
+            row['doc_status'] = 'recently completed'
             g.db.execute('update lend set status = ("complete") where lend_id = (?)', [ row['lend_id'] ])
             g.db.commit()
             #Once status is complete delivery to reader in waiting queue 
-            
+    
+    #Orders Placed and completed
+    query = ''' select from_lib, order_date, delivery_date, doc_id, doc_copy, status, lend_id
+                from lend
+                where to_lib = (?)
+                  and status = 'complete'
+            '''
+    ccur = g.db.execute( query, [ session['lib_id'] ])
+    corders = [dict(from_lib=row[0], order_date=row[1], delivery_date=row[2], doc_id=row[3], doc_copy=row[4], doc_status=row[5], lend_id=row[6]) for row in ccur.fetchall()]
 
-    return render_template('library_home.html', rows=rows, arows=arows, brows=brows, orders=orders)
+    return render_template('library_home.html', rows=rows, arows=arows, brows=brows, orders=orders, corders=corders)
 
 @app.route('/retrieve/<doc_id>/<doc_copy>')    
 def retrieve(doc_id=None,doc_copy=None):
@@ -310,21 +373,33 @@ def retrieve(doc_id=None,doc_copy=None):
 @app.route('/inventory')
 def inventory():
     # show a list of all books in inventory of this library and their status, location etc.. 
-    query = ''' select d.doc_title, i.doc_copy, i.doc_status, i.curr_location, i.doc_id
+    # Documents should not show if they are in the process of being lent out 
+    query = ''' select d.doc_title, i.doc_copy, i.curr_location, i.doc_id
             from inventory as i
             inner join document as d 
             on i.doc_id = d.doc_id
             where i.lib_id = (?)
-              and not exists(
+              and i.curr_location = (?)
+            and not exists
+            (
                 select *
                 from borrow as b
                 where b.doc_id   = i.doc_id
                   and b.doc_copy = i.doc_copy
-            ) 
+            )
+            and not exists
+            (
+                select *
+                from lend as l
+                where l.doc_id = i.doc_id
+                  and l.doc_copy = i.doc_copy
+                  and l.status = 'processing'
+            )
+            group by i.doc_id 
             '''
     
-    cur = g.db.execute( query, [ session['lib_id'] ] )
-    rows = [dict( doc_name=row[0], doc_copy=row[1], doc_status=row[2], curr_location=row[3], doc_id=row[4]) for row in cur.fetchall()]
+    cur = g.db.execute( query, [ session['lib_id'], session['lib_id'] ] )
+    rows = [dict( doc_name=row[0], doc_copy=row[1], curr_location=row[2], doc_id=row[3]) for row in cur.fetchall()]
     
     #Unavailble documents
     query = ''' 
@@ -342,16 +417,24 @@ def inventory():
                 from inventory as i 
                 where i.lib_id <> "library1"
                 and i.doc_id = d.doc_id 
-            )and not exists
+            )
+            and not exists
             (
                 select *
                 from waiting as w
                 where w.reader_id = (?)
                   and w.doc_id = d.doc_id
-            ) 
+            )
+            and not exists
+            (
+                select *
+                from borrow as b
+                where b.reader_id = (?)
+                  and b.doc_id = d.doc_id
+            )  
             '''
     
-    cur = g.db.execute( query, [ session['lib_id'], session['reader_id'] ] )
+    cur = g.db.execute( query, [ session['lib_id'], session['reader_id'], session['reader_id'] ] )
     uarows = [dict( doc_name=row[0], doc_id=row[1] ) for row in cur.fetchall()]
    
     return render_template('inventory.html', rows=rows, uarows=uarows)
@@ -363,20 +446,34 @@ def wait(doc_id=None):
     delivery_date = date + datetime.timedelta(days=5)
     
     #Insert into waiting queue 
-    g.db.execute('insert into waiting (reader_id, doc_id, wait_date) values (?, ?, ?)', [ session['reader_id'], doc_id, todays_date ])
-    g.db.commit()
-    
+    try:
+        g.db.execute('insert into waiting (reader_id, doc_id, wait_date) values (?, ?, ?)', [ session['reader_id'], doc_id, todays_date ])
+        g.db.commit()
+    except:
+        return redirect( url_for('reader_home') )
+        
     #Find a document that is available 
+    #Documents should not be in the lend table under the completed status 
     query = '''
             select i.lib_id, i.doc_id, max( i.doc_copy )
             from inventory as i
             where i.lib_id <> (?)
             and i.doc_id = (?)
-            and not exists(
+            and not exists
+            (
                 select *
                 from borrow as b
                 where b.doc_id = i.doc_id
-                    and b.doc_copy = i.doc_copy );
+                    and b.doc_copy = i.doc_copy 
+            )
+            and not exists
+            (
+                select *
+                from lend as l
+                where l.doc_id = i.doc_id
+                  and l.doc_copy = i.doc_copy
+                  and l.status = 'processing'
+            );
             '''
     cur = g.db.execute( query, [ session['lib_id'], doc_id ])
     rows = [dict( lib_id=row[0], doc_id=row[1], doc_copy=row[2] ) for row in cur.fetchall()]
@@ -389,15 +486,32 @@ def wait(doc_id=None):
     g.db.commit()
     
     #Document/Copy being delivered as unavailable until it is delivered
-    g.db.execute('update inventory set doc_status = ("unavailable") where doc_id = (?) and doc_copy = (?)', [ rows[0]['doc_id'], rows[0]['doc_copy'] ])
-    g.db.commit()
+    # g.db.execute('update inventory set doc_status = ("unavailable") where doc_id = (?) and doc_copy = (?)', [ rows[0]['doc_id'], rows[0]['doc_copy'] ])
+    # g.db.commit()
 
     return redirect( url_for('reader_home') )
+    
+
+@app.route('/history')
+def history():
+
+    query = '''
+        select h.reader_id, h.borrowed_from, h.returned_to, h.doc_id, h.doc_copy, h.borrow_date, h.return_date, d.doc_title
+        from history as h
+        inner join document as d
+            on h.doc_id = d.doc_id 
+        where borrowed_from = (?)
+        '''
+    cur = g.db.execute( query, [ session['lib_id'] ])
+    rows = [dict( reader_id=row[0], borrowed_from=row[1], returned_to=row[2], doc_id=row[3], doc_copy=row[4], borrow_date=row[5], return_date=row[6], doc_title=row[7] ) for row in cur.fetchall()]
+
+    return render_template('history.html', rows=rows)
+    
 @app.route('/library_lend')   
 def library_lend():
 
      # show a list of all books in inventory of this library and their status, location etc.. 
-    query = ''' select d.doc_title, i.doc_copy, i.doc_status, i.curr_location, i.doc_id, i.lib_id
+    query = ''' select d.doc_title, i.doc_copy, i.curr_location, i.doc_id, i.lib_id
             from inventory as i
             inner join document as d 
             on i.doc_id = d.doc_id
@@ -412,10 +526,10 @@ def library_lend():
             '''
     
     cur = g.db.execute( query, [ session['lib_id' ] ])
-    rows = [dict( doc_name=row[0], doc_copy=row[1], doc_status=row[2], curr_location=row[3], doc_id=row[4], lib_id=row[5]) for row in cur.fetchall()]
+    rows = [dict( doc_name=row[0], doc_copy=row[1],curr_location=row[2], doc_id=row[3], lib_id=row[4]) for row in cur.fetchall()]
     
     #Unavailble documents
-    query = ''' select d.doc_title, i.doc_copy, i.doc_status, i.curr_location, i.doc_id, i.lib_id
+    query = ''' select d.doc_title, i.doc_copy, i.curr_location, i.doc_id, i.lib_id
         from inventory as i
         inner join document as d 
         on i.doc_id = d.doc_id
@@ -429,7 +543,7 @@ def library_lend():
         '''
     
     cur = g.db.execute( query, [ session['lib_id'] ] )
-    uarows = [dict( doc_name=row[0], doc_copy=row[1], doc_status=row[2], curr_location=row[3], doc_id=row[4], lib_id=row[5] ) for row in cur.fetchall()]
+    uarows = [dict( doc_name=row[0], doc_copy=row[1], curr_location=row[2], doc_id=row[3], lib_id=row[4] ) for row in cur.fetchall()]
 
     return render_template('library_lend.html', rows=rows, uarows=uarows)
 
@@ -477,35 +591,86 @@ def waitlist():
 def doc_info(doc_id=None):
     
     if doc_id:
-        query = 'select * from document where doc_id = (?)'
+        query = 'select doc_id, doc_title, doc_type from document where doc_id = (?)'
         cur = g.db.execute( query, [doc_id] )
-        rows = [dict( doc_name=row[1], doc_desc=row[3] ) for row in cur.fetchall()]
+        rows = [dict( doc_id=row[0], doc_name=row[1], doc_type=row[2] ) for row in cur.fetchall()]
+        
+        #Retrieve all document keywords in a separate list
+        count = document_count()
+        doc_list = []
+        
+        #Create a list of lists, each list contains all the keywords for a given document
+        for doc in xrange(1, count + 1):
+            query = 'select doc_id, keyword from document_keyword where doc_id = (?)'
+            cur = g.db.execute( query, [doc] )
+            rows = [dict( doc_id=row[0], doc_keyword=row[1]) for row in cur.fetchall()]
+            doc_list.append( rows )
+   
+        print doc_list[0] 
     else:
         pass
 
     return render_template('doc_info.html', context=rows)
 
+def document_count():
+
+    cur  = g.db.execute('select count(doc_id) from document')
+    count = cur.fetchone()[0]
+    return count
+
   
-@app.route('/borrow/<doc_id>/<doc_copy>')
-def borrow(doc_id=None, doc_copy=None):
+@app.route('/borrow/<doc_id>/')
+def borrow(doc_id=None):
     
-    if doc_id and doc_copy:
-        query = ''' select d.doc_title, i.doc_copy, d.doc_type, i.curr_location, i.doc_id, i.lib_id
+    if doc_id:
+        #Select the max available document from the users main library
+        query = ''' 
+            select d.doc_title, max( i.doc_copy ), d.doc_type, i.curr_location, i.doc_id, i.lib_id
             from inventory as i
             inner join document as d 
-            on i.doc_id = d.doc_id 
-            where i.doc_id   = (?) 
-              and i.doc_copy = (?)
+                on i.doc_id = d.doc_id
+            where i.lib_id = (?)
+              and i.curr_location = (?)
+              and i.doc_id = (?)
+            and not exists
+            (
+                select *
+                from borrow as b
+                where b.doc_id   = i.doc_id
+                  and b.doc_copy = i.doc_copy
+            )
+            and not exists
+            (
+                select *
+                from lend as l
+                where l.doc_id = i.doc_id
+                  and l.doc_copy = i.doc_copy
+                  and l.status = 'processing'
+            );
             '''
-        cur = g.db.execute( query, [doc_id, doc_copy] )
+        cur = g.db.execute( query, [ session['lib_id'], session['lib_id'], doc_id] )
         rows = [dict( doc_name=row[0], doc_copy=row[1], doc_desc=row[2], curr_location=row[3], doc_id=row[4], lib_id=row[5] ) for row in cur.fetchall()]
+        
+        print rows
+        print len( rows )
+        
+        if rows[0]['doc_id'] is None:
+            return redirect( url_for('wait', doc_id=doc_id ) )
     else:
         pass
 
     return render_template('borrow.html', context=rows)
-    
+
+@app.route('/borrow_doc/<lib_id>/<doc_id>/')
 @app.route('/borrow_doc/<lib_id>/<doc_id>/<doc_copy>')
 def borrow_doc(lib_id=None,doc_id=None, doc_copy=None):
+
+    # print lib_id, doc_id, doc_copy
+
+    # if not doc_copy:
+    #     get_doc_copy = g.db.execute('select max(doc_copy) from inventory where doc_id = (?)', [ doc_id ])
+    #     doc_copy = get_doc_copy.fetchone()[0]
+    #     print doc_copy
 
     todays_date = time.strftime("%Y-%m-%d")
     date = datetime.datetime.strptime(todays_date, "%Y-%m-%d").date()
@@ -530,7 +695,7 @@ def borrow_doc(lib_id=None,doc_id=None, doc_copy=None):
                     [ rows[0]['borrow_id'], session['reader_id'], lib_id, doc_id, doc_copy, todays_date ])
     g.db.commit()
     
-    return redirect(url_for('inventory'))
+    return redirect(url_for('reader_home'))
 
 @app.route('/author') 
 def author():
@@ -591,6 +756,8 @@ def add_document():
 #Sign out of session
 @app.route('/signout')
 def signout():
+    session.pop('lib_id', None)
+    session.pop('reader_id', None)
     session.pop('lib_logged_in', None)
     session.pop('reader_logged_in', None)
     return redirect(url_for('index'))
@@ -711,3 +878,42 @@ if __name__ == "__main__":
 #     print request.form['title']
 #     print request.form['text']
 #     return redirect(url_for('show_entries'))
+
+# #Always returns 1
+# doc1keywords['hello','bye']
+# doc2keywords['hello','bye']
+
+# #Always returns 0
+# doc1keywords['hello','bye']
+# doc2keywords['x','y']
+
+# doc1keywords['hello','bye']
+# doc2keywords['Hello', 'Hello','x','y']
+
+# def compressLists( listKeywords1, listKeyword2 ):
+#     #all strings without duplicates 
+#     allKeywords  'Hello','bye','x','y'
+#     occursInDoc1  1        1    0   0 <- list 1 #Frequency of words in doc1
+#     occursInDoc2  2        0    1   1 <- list 2 #Frequency of words in doc2
+    
+#     return occursInDoc1, occursInDoc2 #Return two lists 
+    
+
+
+
+# simVal[0, 'doc2'] = cosineSim( doc1-keywords, doc2-keywords ) 
+
+# simVal[1, 'doc3'] = cosineSim( doc1-keywords, doc3-keywords ) 
+
+# simVal[2, 'doc4'] = cosineSim( doc1-keywords, doc4-keywords ) 
+
+# simVal[3, 'doc5'] = cosineSim( doc1-keywords, doc5-keywords ) 
+
+
+# sort( simVal )
+
+# simVal[0] is document that is most similar 
+
+# simVal[N-1] is document least similar 
+
+
