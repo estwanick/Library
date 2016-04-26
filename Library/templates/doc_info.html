@@ -15,6 +15,61 @@
     <hr>
 </div>
 
-
+<div class="row">
+  <div class="col-md-2"></div>
+  <div class="col-md-8">
+      <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    Document Id
+                </th>
+                <th>
+                    Current Location
+                </th>
+                <th>
+                    Cosine Similarity 
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in ordered_by_sim %}
+            <tr>
+                <td>
+                    {{ row['doc_id'] }}
+                </td>
+                <td>
+                    {{ row['doc_title'] }}
+                </td>
+                <td>
+                    {{ row['similarity'] }}
+                </td>
+                <td>
+                    {% if session.reader_logged_in %}
+                        <a class="btn btn-primary btn-sm" href="{{ url_for('borrow',   doc_id=row['doc_id']) }}" role="button">Borrow</a>
+                    {% endif %}
+                    {% if session.lib_logged_in %}
+                        <a class="btn btn-success btn-sm" href="{{ url_for('add_to_inventory', doc_id=row['doc_id']) }}" role="button">Add to Inventory</a>  
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+                <tr>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+  </div>
+  <div class="col-md-2"></div>
+</div>
 
 {% endblock %}

@@ -266,17 +266,68 @@ PRAGMA foreign_keys = ON;
 --                   and l.status = 'processing'
 --             );
 
-select ar.author_name, d.doc_title, i.doc_id, i.doc_copy, i.lib_id
+-- select ar.author_name, d.doc_title, i.doc_id, i.doc_copy, i.lib_id
+--             from inventory as i
+--             inner join document as d
+--                 on i.doc_id = d.doc_id
+--             inner join authoring as au 
+--                 on i.doc_id = au.doc_id
+--             inner join author as ar 
+--                 on au.author_id = ar.author_id
+--             left join document_keyword as k
+--                 on i.doc_id = k.doc_id  
+--             where i.lib_id = 'library1'
+--               and i.curr_location = 'library1'
+--               and ( d.doc_title like (?) or k.keyword like (?) or ar.author_id like (?))
+--             group by i.doc_id;
+
+-- select d.doc_title, d.doc_type, i.curr_location, i.doc_id, max( i.doc_copy ),i.lib_id
+--             from inventory as i
+--             inner join document as d 
+--                 on i.doc_id = d.doc_id
+--             where i.lib_id = 'library1'
+--               and i.curr_location = 'library1'
+--               and i.doc_id = 8
+--             and not exists
+--             (
+--                 select *
+--                 from borrow as b
+--                 where b.doc_id   = i.doc_id
+--                   and b.doc_copy = i.doc_copy
+--             )
+--             and not exists
+--             (
+--                 select *
+--                 from lend as l
+--                 where l.doc_id = i.doc_id
+--                   and l.doc_copy = i.doc_copy
+--                   and l.status = 'processing'
+--             )and not exists(
+--                 select *
+--                 from waiting as w
+--                 where w.doc_id = i.doc_id
+--                   and w.reader_id = 'reader1' 
+--             );
+
+select d.doc_title, i.doc_copy, i.curr_location, i.doc_id
             from inventory as i
-            inner join document as d
-                on i.doc_id = d.doc_id
-            inner join authoring as au 
-                on i.doc_id = au.doc_id
-            inner join author as ar 
-                on au.author_id = ar.author_id
-            left join document_keyword as k
-                on i.doc_id = k.doc_id  
+            inner join document as d 
+            on i.doc_id = d.doc_id
             where i.lib_id = 'library1'
               and i.curr_location = 'library1'
-              and ( d.doc_title like (?) or k.keyword like (?) or ar.author_id like (?))
+            and not exists
+            (
+                select *
+                from borrow as b
+                where b.doc_id    = i.doc_id
+                  and b.reader_id = 'reader1'
+            )
+            and not exists
+            (
+                select *
+                from lend as l
+                where l.doc_id = i.doc_id
+                  and l.doc_copy = i.doc_copy
+                  and l.status = 'processing'
+            )
             group by i.doc_id;

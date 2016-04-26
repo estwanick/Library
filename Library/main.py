@@ -1,4 +1,4 @@
-import sqlite3, time, datetime
+import sqlite3, time, datetime, random, operator
 from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash 
 # from flask.ext.login  import LoginManager
 
@@ -384,8 +384,8 @@ def inventory():
             (
                 select *
                 from borrow as b
-                where b.doc_id   = i.doc_id
-                  and b.doc_copy = i.doc_copy
+                where b.doc_id    = i.doc_id
+                  and b.reader_id = (?)
             )
             and not exists
             (
@@ -398,7 +398,7 @@ def inventory():
             group by i.doc_id 
             '''
     
-    cur = g.db.execute( query, [ session['lib_id'], session['lib_id'] ] )
+    cur = g.db.execute( query, [ session['lib_id'], session['lib_id'], session['reader_id'] ] )
     rows = [dict( doc_name=row[0], doc_copy=row[1], curr_location=row[2], doc_id=row[3]) for row in cur.fetchall()]
     
     #Unavailble documents
@@ -598,19 +598,65 @@ def doc_info(doc_id=None):
         #Retrieve all document keywords in a separate list
         count = document_count()
         doc_list = []
+        doc_similarity = []
         
         #Create a list of lists, each list contains all the keywords for a given document
         for doc in xrange(1, count + 1):
             query = 'select doc_id, keyword from document_keyword where doc_id = (?)'
             cur = g.db.execute( query, [doc] )
-            rows = [dict( doc_id=row[0], doc_keyword=row[1]) for row in cur.fetchall()]
-            doc_list.append( rows )
-   
-        print doc_list[0] 
+            doc_words = [dict( doc_id=row[0], doc_keyword=row[1]) for row in cur.fetchall()]
+            doc_list.append( doc_words )
+      
+        for item in doc_list:
+            
+            doc_index = int( doc_id ) - 1 
+            original_keywords = normalize_list( doc_list[ doc_index ] )
+            compare_keywords  = normalize_list( item )
+            
+            # print original_keywords
+            # print compare_keywords
+            #Call cosine sim with each document paired to the document you are searching
+            similarity = cosineSim( original_keywords, compare_keywords )
+            doc_object = {
+                'doc_id':  item[0]['doc_id'],
+                'similarity': similarity
+            }
+            
+            doc_similarity.append( doc_object )
+            
+        #Exclude the original document
+        del doc_similarity[doc_index]              
+        print doc_similarity
+        
+        ordered_by_sim = []
+        for doc_sim in sorted(doc_similarity, key=operator.itemgetter("similarity"), reverse=True):
+            print doc_sim
+            ordered_by_sim.append( doc_sim )
+               
     else:
         pass
 
-    return render_template('doc_info.html', context=rows)
+    return render_template('doc_info.html', context=rows, ordered_by_sim=ordered_by_sim)
+    
+def cosineSim( oList, compList ):
+
+    similarity = random.random() 
+
+    return similarity 
+    
+def normalize_list( doc_list ):
+    doc_keywords = []
+    
+    for doc in doc_list:
+        doc_id = doc['doc_id']
+        doc_keywords.append( doc['doc_keyword'] )
+
+    doc_object = {
+        'doc_id':  doc_id,
+        'keywords': doc_keywords
+    }
+
+    return doc_object
 
 def document_count():
 
@@ -651,10 +697,96 @@ def borrow(doc_id=None):
         cur = g.db.execute( query, [ session['lib_id'], session['lib_id'], doc_id] )
         rows = [dict( doc_name=row[0], doc_copy=row[1], doc_desc=row[2], curr_location=row[3], doc_id=row[4], lib_id=row[5] ) for row in cur.fetchall()]
         
-        print rows
-        print len( rows )
+        #Check if document is available to be borrowed
+            # show a list of all books in inventory of this library and their status, location etc.. 
+    # Documents should not show if they are in the process of being lent out 
+        query = ''' select d.doc_title, i.doc_copy, i.curr_location, i.doc_id
+            from inventory as i
+            inner join document as d 
+            on i.doc_id = d.doc_id
+            where i.lib_id = (?)
+              and i.curr_location = (?)
+            and not exists
+            (
+                select *
+                from borrow as b
+                where b.doc_id    = i.doc_id
+                  and b.reader_id = (?)
+            )
+            and not exists
+            (
+                select *
+                from lend as l
+                where l.doc_id = i.doc_id
+                  and l.doc_copy = i.doc_copy
+                  and l.status = 'processing'
+            )
+            group by i.doc_id 
+            '''
+    
+        cur = g.db.execute( query, [ session['lib_id'], session['lib_id'], session['reader_id'] ] )
+        borrow_docs = [dict( doc_name=row[0], doc_copy=row[1], curr_location=row[2], doc_id=row[3]) for row in cur.fetchall()]
+    
+        #Check if the document is available at another library
+        #Unavailble documents
+        query = ''' 
+                select d.doc_title, d.doc_id
+                from document as d
+                where not exists(
+                    select i.doc_id
+                    from inventory as i 
+                    where i.lib_id = (?)
+                    and i.doc_id = d.doc_id 
+                )
+                and exists
+                (
+                    select i.doc_id
+                    from inventory as i 
+                    where i.lib_id <> "library1"
+                    and i.doc_id = d.doc_id 
+                )
+                and not exists
+                (
+                    select *
+                    from waiting as w
+                    where w.reader_id = (?)
+                    and w.doc_id = d.doc_id
+                )
+                and not exists
+                (
+                    select *
+                    from borrow as b
+                    where b.reader_id = (?)
+                    and b.doc_id = d.doc_id
+                )  
+                '''
+        
+        cur = g.db.execute( query, [ session['lib_id'], session['reader_id'], session['reader_id'] ] )
+        ua_docs = [dict( doc_name=row[0], doc_id=row[1] ) for row in cur.fetchall()] 
+        
+        print 'Borrow -----------------------'
+        print borrow_docs
+        print 'Unavailable -----------------------'
+        print ua_docs
+        
+        #print rows 
+        #print len( rows )
+        
+        #TODO: Do not wait list item if it is already wait listed or borrowing a document
+        #STANDARDIZE BORROW FUNCTION, BORROWING IS NOT CONSISTENT ON BORROW PAGE AND SEARCH RESULTS
+        
+        
+        cur = g.db.execute( 'select doc_id from waiting where doc_id = (?) and reader_id = (?)', [doc_id, session['reader_id']] )
+        wait_docs = [dict( doc_id=row[0] ) for row in cur.fetchall()]
+        
+        print 'Waiting -----------------------'
+        print wait_docs
         
         if rows[0]['doc_id'] is None:
+            for wdoc in wait_docs:
+                if wdoc['doc_id'] == doc_id:
+                    #You are already waiting for this document
+                    return redirect( url_for('reader_home' ) )
             return redirect( url_for('wait', doc_id=doc_id ) )
     else:
         pass
@@ -684,12 +816,12 @@ def borrow_doc(lib_id=None,doc_id=None, doc_copy=None):
     #Select current row to get borrow id
     query = ''' select borrow_id
             from borrow
-            where doc_id   = (?) 
-              and doc_copy = (?)
+            where doc_id    = (?) 
+              and reader_id = (?)
             '''
-    cur = g.db.execute( query, [doc_id, doc_copy] )
+    cur = g.db.execute( query, [doc_id, session['reader_id']] )
     rows = [dict( borrow_id=row[0] ) for row in cur.fetchall()]
-        
+    print rows
     #Track borrow History  
     g.db.execute('insert into history (borrow_id, reader_id, borrowed_from, doc_id, doc_copy, borrow_date) values (?, ?, ?, ?, ?, ?)', 
                     [ rows[0]['borrow_id'], session['reader_id'], lib_id, doc_id, doc_copy, todays_date ])
