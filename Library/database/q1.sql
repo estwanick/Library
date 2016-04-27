@@ -309,6 +309,115 @@ PRAGMA foreign_keys = ON;
 --                   and w.reader_id = 'reader1' 
 --             );
 
+-- select d.doc_title, i.doc_copy, i.curr_location, i.doc_id
+--             from inventory as i
+--             inner join document as d 
+--             on i.doc_id = d.doc_id
+--             where i.lib_id = 'library1'
+--               and i.curr_location = 'library1'
+--             and not exists
+--             (
+--                 select *
+--                 from borrow as b
+--                 where b.doc_id    = i.doc_id
+--                   and b.reader_id = 'reader1'
+--             )
+--             and not exists
+--             (
+--                 select *
+--                 from lend as l
+--                 where l.doc_id = i.doc_id
+--                   and l.doc_copy = i.doc_copy
+--                   and l.status = 'processing'
+--             )
+--             group by i.doc_id;
+
+-- select w.doc_id, w.reader_id 
+-- from waiting as w
+-- where   w.doc_id = 4 
+--     and w.reader_id = (?)
+
+-- select d.doc_title, max( i.doc_copy ), d.doc_type, i.curr_location, i.doc_id, i.lib_id
+--             from inventory as i
+--             inner join document as d 
+--                 on i.doc_id = d.doc_id
+--             where i.lib_id = 'library1'
+--               and i.curr_location = 'library1'
+--               and i.doc_id = 4
+--             and not exists
+--             (
+--                 select *
+--                 from borrow as b
+--                 where b.doc_id   = i.doc_id
+--                   and b.doc_copy = i.doc_copy
+--             )
+--             and not exists
+--             (
+--                 select *
+--                 from lend as l
+--                 where l.doc_id = i.doc_id
+--                   and l.doc_copy = i.doc_copy
+--                   and l.status = 'processing'
+--             );
+
+-- select d.doc_title, i.doc_copy, i.curr_location, i.doc_id
+--             from inventory as i
+--             inner join document as d 
+--             on i.doc_id = d.doc_id
+--             where i.lib_id = 'library1'
+--               and i.curr_location = 'library1'
+--             and not exists
+--             (
+--                 select *
+--                 from borrow as b
+--                 where b.doc_id    = i.doc_id
+--                   and b.reader_id = 'reader1'
+--             )
+--             and not exists
+--             (
+--                 select *
+--                 from lend as l
+--                 where l.doc_id = i.doc_id
+--                   and l.doc_copy = i.doc_copy
+--                   and l.status = 'processing'
+--             )
+--             group by i.doc_id ;
+
+-- select *
+-- from return as r
+-- where actual_return > '2016-04-26';
+
+-- select d.doc_title, i.doc_copy , d.doc_type, i.curr_location, i.doc_id, i.lib_id
+--             from inventory as i
+--             inner join document as d 
+--                 on i.doc_id = d.doc_id
+--             where i.lib_id = 'library1'
+--               and i.curr_location = 'library1'
+--               and i.doc_id = 1
+            -- and not exists
+            -- (
+            --     select *
+            --     from return as r
+            --     where r.doc_id   = i.doc_id
+            --       and r.doc_copy = i.doc_copy 
+            --       and r.actual_return >= '2016-04-26' 
+            -- )
+--             and not exists
+--             (
+--                 select *
+--                 from borrow as b
+--                 where b.doc_id   = i.doc_id
+--                   and b.doc_copy = i.doc_copy
+--             )
+--             and not exists
+--             (
+--                 select *
+--                 from lend as l
+--                 where l.doc_id = i.doc_id
+--                   and l.doc_copy = i.doc_copy
+--                   and l.status = 'processing'
+--             );
+
 select d.doc_title, i.doc_copy, i.curr_location, i.doc_id
             from inventory as i
             inner join document as d 
@@ -321,6 +430,13 @@ select d.doc_title, i.doc_copy, i.curr_location, i.doc_id
                 from borrow as b
                 where b.doc_id    = i.doc_id
                   and b.reader_id = 'reader1'
+            )and not exists
+            (
+                select *
+                from return as r
+                where r.doc_id   = i.doc_id
+                  and r.doc_copy = i.doc_copy 
+                  and r.actual_return >= '2016-04-26' 
             )
             and not exists
             (
@@ -330,4 +446,4 @@ select d.doc_title, i.doc_copy, i.curr_location, i.doc_id
                   and l.doc_copy = i.doc_copy
                   and l.status = 'processing'
             )
-            group by i.doc_id;
+            group by i.doc_id; 

@@ -8,7 +8,13 @@
         <p> {{ context[0]['doc_desc'] }}</p>
         <p> Copy: {{ context[0]['doc_copy'] }}</p>
         <p> Location: {{ context[0]['curr_location'] }}</p>
-        <p><a class="btn btn-primary btn-lg" href="{{ url_for('borrow', doc_id=context[0]['doc_id']) }}" role="button">Borrow</a></p>
+        {% if buttons['borrow'] %}
+            <p><a class="btn btn-primary btn-lg" href="{{ url_for('borrow_doc', lib_id=session['lib_id'], doc_id=context[0]['doc_id'], doc_copy=context[0]['doc_copy'] ) }}" role="button">Borrow</a></p>
+        {% elif buttons['wait'] %}
+            <p><a class="btn btn-primary btn-lg" href="{{ url_for('wait',   doc_id=context[0]['doc_id'] ) }}"role="button">Wait List</a></p>
+        {% else %}
+            <p><a class="btn btn-primary btn-lg" href="" role="button">Unavailable</a></p>
+        {% endif %}
     </div>
 </div>
 
