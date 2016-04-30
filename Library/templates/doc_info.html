@@ -5,7 +5,10 @@
 <div class="jumbotron">
     <div class="container">
         <h1>{{ context[0]['doc_name'] }}</h1>
-        <p> {{ context[0]['doc_type'] }}</p>
+        <p>Type: {{ context[0]['doc_type'] }}</p>
+        <p>
+            Keywords: {% for row in keywords %} {{ row['doc_keyword'] }} {% else %} N/A {% endfor %}
+        </p>
         <p><a class="btn btn-primary btn-lg" href="{{ url_for('borrow', doc_id=context[0]['doc_id'] ) }}" role="button">Borrow</a></p>
     </div>
 </div>
@@ -25,7 +28,7 @@
                     Document Id
                 </th>
                 <th>
-                    Current Location
+                    Document Title
                 </th>
                 <th>
                     Cosine Similarity 

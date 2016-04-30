@@ -418,32 +418,121 @@ PRAGMA foreign_keys = ON;
 --                   and l.status = 'processing'
 --             );
 
-select d.doc_title, i.doc_copy, i.curr_location, i.doc_id
-            from inventory as i
-            inner join document as d 
-            on i.doc_id = d.doc_id
-            where i.lib_id = 'library1'
-              and i.curr_location = 'library1'
-            and not exists
-            (
-                select *
-                from borrow as b
-                where b.doc_id    = i.doc_id
-                  and b.reader_id = 'reader1'
-            )and not exists
-            (
-                select *
-                from return as r
-                where r.doc_id   = i.doc_id
-                  and r.doc_copy = i.doc_copy 
-                  and r.actual_return >= '2016-04-26' 
-            )
-            and not exists
-            (
-                select *
-                from lend as l
-                where l.doc_id = i.doc_id
-                  and l.doc_copy = i.doc_copy
-                  and l.status = 'processing'
-            )
-            group by i.doc_id; 
+-- select d.doc_title, i.doc_copy, i.curr_location, i.doc_id
+--             from inventory as i
+--             inner join document as d 
+--             on i.doc_id = d.doc_id
+--             where i.lib_id = 'library1'
+--               and i.curr_location = 'library1'
+--             and not exists
+--             (
+--                 select *
+--                 from borrow as b
+--                 where b.doc_id    = i.doc_id
+--                   and b.reader_id = 'reader1'
+--             )and not exists
+--             (
+--                 select *
+--                 from return as r
+--                 where r.doc_id   = i.doc_id
+--                   and r.doc_copy = i.doc_copy 
+--                   and r.actual_return >= '2016-04-26' 
+--             )
+--             and not exists
+--             (
+--                 select *
+--                 from lend as l
+--                 where l.doc_id = i.doc_id
+--                   and l.doc_copy = i.doc_copy
+--                   and l.status = 'processing'
+--             )
+--             group by i.doc_id; 
+
+-- select d.doc_id, d.doc_title
+--             from document as d
+--             where not exists(
+--                 select *
+--                 from inventory as i
+--                 where i.doc_id = d.doc_id 
+--             ) 
+--             or(
+--                 select *
+--                 from inventory as i
+--                 where not exists  
+--             );
+
+-- Documents that are not available anywhere 
+-- select *
+-- from document as d
+-- where not exists(
+--     select *
+--     from inventory as i
+--     where d.doc_id = i.doc_id
+--       and not exists(
+--           select * 
+--           from borrow as b
+--           where b.doc_id = i.doc_id
+--             and b.doc_copy = i.doc_copy
+--       ) 
+-- ); 
+
+-- select *
+-- from document as d
+-- where not exists(
+--     select *
+--     from inventory as i
+--     where d.doc_id = i.doc_id
+-- );
+
+-- select d.doc_id
+-- from document as d
+-- where not exists(
+--     select *
+--     from inventory as i
+--     where not exists(
+--         select * 
+--         from borrow as b
+--         where b.doc_id = d.doc_id
+--           and b.doc_copy = i.doc_copy
+--     )
+-- ); 
+
+--Waiting query
+-- select *
+-- from document as d
+-- where not exists(
+--     select *
+--     from inventory as i
+--     where i.doc_id = d.doc_id
+--       and not exists(
+--           select * 
+--           from borrow as b
+--           where b.doc_id = d.doc_id
+--             and b.doc_copy = i.doc_copy
+--       ) 
+-- );
+
+
+select d.doc_title, d.doc_id
+                from document as d
+                where d.doc_id = (?)
+                and not exists(
+                    select i.doc_id
+                    from inventory as i 
+                    where i.lib_id = (?)
+                    and i.doc_id = d.doc_id 
+                )
+                and exists
+                (
+                    select i.doc_id
+                    from inventory as i 
+                    where i.lib_id <> (?)
+                    and i.doc_id = d.doc_id 
+                )
+                and not exists
+                (
+                    select *
+                    from borrow as b
+                    where b.reader_id = (?)
+                    and b.doc_id = d.doc_id
+                ); 

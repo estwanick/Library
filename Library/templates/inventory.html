@@ -63,7 +63,7 @@
 </div>
 
 <div class="row column text-center">
-    <h2>Currently Unavailable</h2>
+    <h2>Order: Documents available at other libraries</h2>
     <hr>
 </div>
 
@@ -80,6 +80,48 @@
         </thead>
         <tbody>
             {% for row in uarows %}
+            <tr>
+                <td>
+                    {{ row['doc_name'] }}
+                </td>
+                <td>
+                    <a class="btn btn-primary btn-sm" href="{{ url_for('order',   doc_id=row['doc_id'] ) }}" role="button">Order</a>
+                </td>
+            </tr>
+            {% else %}
+                <tr>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+  </div>
+  <div class="col-md-2"></div>
+</div>
+
+<div class="row column text-center">
+    <h2>Unavailable Documents</h2>
+    <hr>
+</div>
+
+<div class="row">
+  <div class="col-md-2"></div>
+  <div class="col-md-8">
+      <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    Document Title
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in waitdocs %}
             <tr>
                 <td>
                     {{ row['doc_name'] }}
@@ -103,6 +145,7 @@
   </div>
   <div class="col-md-2"></div>
 </div>
+
 {% else %}
 <div class="jumbotron">
     <div class="container">

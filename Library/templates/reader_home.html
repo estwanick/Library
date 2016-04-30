@@ -4,7 +4,7 @@
 <div class="row">
   <div class="col-md-2"></div>
   <div class="col-md-8">
-      <h3>Waiting For</h3>
+      <h3>Order History</h3>
       <table class="table">
         <thead>
             <tr>
@@ -26,7 +26,7 @@
             </tr>
         </thead>
         <tbody>
-            {% for row in waitrows %}
+            {% for row in orderrows %}
             <tr>
                 <td>
                     {{ row['doc_title'] }}
@@ -45,7 +45,64 @@
                 </td>
             </tr>
             {% else %}
-                <em>No Data</em>
+                <tr>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+  </div>
+  <div class="col-md-2"></div>
+</div>
+
+<div class="row">
+  <div class="col-md-2"></div>
+  <div class="col-md-8">
+      <h3>Waiting For</h3>
+      <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    Document Title
+                </th>
+                 <th>
+                    Waiting Since
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in waitrows %}
+            <tr>
+                <td>
+                    {{ row['doc_title'] }}
+                </td>
+                <td>
+                    {{ row['wait_date'] }}
+                </td>
+            </tr>
+            {% else %}
+                <tr>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+            </tr>
             {% endfor %}
         </tbody>
     </table>
@@ -109,7 +166,23 @@
                 </td>
             </tr>
             {% else %}
-                <em>No Data</em>
+                <tr>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+            </tr>
             {% endfor %}
         </tbody>
     </table>
@@ -161,7 +234,23 @@
                 </td>
             </tr>
             {% else %}
-                <em>No Data</em>
+                <tr>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+            </tr>
             {% endfor %}
         </tbody>
     </table>
