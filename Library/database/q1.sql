@@ -512,27 +512,161 @@ PRAGMA foreign_keys = ON;
 --       ) 
 -- );
 
+-- select d.doc_title, max( i.doc_copy ), d.doc_type, i.curr_location, i.doc_id, i.lib_id
+-- from inventory as i
+-- inner join document as d 
+--     on i.doc_id = d.doc_id
+-- where i.lib_id = 'library1'
+--     and i.curr_location = 'library1'
+--     and i.doc_id = 11
+-- and not exists
+-- (
+--     select *
+--     from borrow as b
+--     where b.doc_id   = i.doc_id
+--         and b.doc_copy = i.doc_copy
+-- )and not exists
+-- (
+--     select *
+--     from return as r
+--     where r.doc_id   = i.doc_id
+--         and r.doc_copy = i.doc_copy 
+--         and r.actual_return >= '2016-04-31'
+-- )
+-- and not exists
+-- (
+--     select *
+--     from lend as l
+--     where l.doc_id = i.doc_id
+--         and l.doc_copy = i.doc_copy
+--         and l.status = 'processing'
+-- );
 
-select d.doc_title, d.doc_id
-                from document as d
-                where d.doc_id = (?)
-                and not exists(
-                    select i.doc_id
-                    from inventory as i 
-                    where i.lib_id = (?)
-                    and i.doc_id = d.doc_id 
-                )
-                and exists
-                (
-                    select i.doc_id
-                    from inventory as i 
-                    where i.lib_id <> (?)
-                    and i.doc_id = d.doc_id 
-                )
-                and not exists
-                (
-                    select *
-                    from borrow as b
-                    where b.reader_id = (?)
-                    and b.doc_id = d.doc_id
-                ); 
+-- select d.doc_title, max( i.doc_copy ), d.doc_type, i.curr_location, i.doc_id, i.lib_id
+-- from inventory as i
+-- inner join document as d 
+--     on i.doc_id = d.doc_id
+-- where i.doc_id = 11
+-- and not exists
+-- (
+--     select *
+--     from borrow as b
+--     where b.doc_id   = i.doc_id
+--         and b.doc_copy = i.doc_copy
+-- )and not exists
+-- (
+--     select *
+--     from return as r
+--     where r.doc_id   = i.doc_id
+--         and r.doc_copy = i.doc_copy 
+--         and r.actual_return >= '2016-04-31'
+-- )
+-- and not exists
+-- (
+--     select *
+--     from lend as l
+--     where l.doc_id = i.doc_id
+--         and l.doc_copy = i.doc_copy
+--         and l.status = 'processing'
+-- );
+--Unavailable documents
+-- select *
+-- from document as d
+-- where not exists(
+--     select *
+--     from inventory as i
+--     where i.doc_id = d.doc_id
+--     and not exists
+--         (
+--         select * 
+--         from borrow as b
+--         where b.doc_id = d.doc_id
+--             and b.doc_copy = i.doc_copy     
+--         )   
+--     and not exists 
+--         (
+--         select * 
+--         from return as r
+--         where r.doc_id = d.doc_id
+--             and r.doc_copy = i.doc_copy
+--             and r.actual_return = '2016-04-30'
+--         )         
+-- );
+
+-- select d.doc_id, max( i.doc_copy ), i.lib_id
+-- from inventory as i
+-- inner join document as d 
+--     on i.doc_id = d.doc_id
+-- where i.curr_location <> 'library1'
+--     and i.doc_id = 11
+-- and not exists
+-- (
+--     select *
+--     from borrow as b
+--     where b.doc_id   = i.doc_id
+--         and b.doc_copy = i.doc_copy
+-- )and not exists
+-- (
+--     select *
+--     from return as r
+--     where r.doc_id   = i.doc_id
+--         and r.doc_copy = i.doc_copy 
+--         and r.actual_return = '2016-04-30'
+-- )
+-- and not exists
+-- (
+--     select *
+--     from lend as l
+--     where l.doc_id = i.doc_id
+--         and l.doc_copy = i.doc_copy
+--         and l.status = 'processing'
+-- );
+
+-- select d.doc_id, max( i.doc_copy ), i.lib_id
+-- from inventory as i
+-- inner join document as d 
+--     on i.doc_id = d.doc_id
+-- where i.curr_location = 'library1'
+--     and i.doc_id = 12
+-- and not exists
+-- (
+--     select *
+--     from borrow as b
+--     where b.doc_id   = i.doc_id
+--         and b.doc_copy = i.doc_copy
+-- )and not exists
+-- (
+--     select *
+--     from return as r
+--     where r.doc_id   = i.doc_id
+--         and r.doc_copy = i.doc_copy 
+--         and r.actual_return = '2016-04-30'
+-- )
+-- and not exists
+-- (
+--     select *
+--     from lend as l
+--     where l.doc_id = i.doc_id
+--         and l.doc_copy = i.doc_copy
+--         and l.status = 'processing'
+-- );
+
+select i.lib_id, i.doc_id, max( i.doc_copy )
+            from inventory as i
+            where i.lib_id <> 'library1'
+            and i.doc_id = 11
+            and not exists
+            (
+                select *
+                from borrow as b
+                where b.doc_id = i.doc_id
+                    and b.doc_copy = i.doc_copy 
+            )
+            and not exists
+            (
+                select *
+                from lend as l
+                where l.doc_id = i.doc_id
+                  and l.doc_copy = i.doc_copy
+                  and l.status = 'processing'
+            );

@@ -52,8 +52,7 @@ create table Document(
 
 create table Document_Keyword(
     doc_id int,
-    keyword varchar,
-    primary key(doc_id, keyword)
+    keyword varchar
     -- foreign key(doc_id) references Document(doc_id)
 );
 

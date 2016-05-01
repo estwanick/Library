@@ -5,28 +5,18 @@
     <div class="container">
 
         <!-- Reader Signup-->
-        <form class="form-horizontal" action="{{ url_for('add_document') }}" method="post">
+        <form class="form-horizontal" action="{{ url_for('add_keyword') }}" method="post">
         <fieldset>
             
         <!-- Form Name -->
         <legend>Add Keywords</legend>
-        
-
-        <!-- Text input-->
+           
         <div class="form-group">
-        <label class="col-md-4 control-label" for="doc_title">Document Title</label>  
+        <label class="col-md-4 control-label" for="doc_type">Document</label>  
         <div class="col-md-4">
-        <input id="doc_title" name="doc_title" type="text" class="form-control input-md">
-            
-        </div>
-        </div>
-        
-        <div class="form-group">
-        <label class="col-md-4 control-label" for="doc_type">Author</label>  
-        <div class="col-md-4">
-        <select class="form-control" id="authors" name="authors">
+        <select class="form-control" id="document" name="document" required>
             {% for row in options %}
-            <option value="{{ row['author_id'] }}">{{ row['author_name'] }}</option>
+            <option value="{{ row['doc_id'] }}">{{ row['doc_title'] }}</option>
             {% else %}
             
             {% endfor %}
@@ -34,21 +24,12 @@
             
         </div>
         </div>
-        
+                    
         <!-- Text input-->
         <div class="form-group">
-        <label class="col-md-4 control-label" for="doc_type">Document Type</label>  
+        <label class="col-md-4 control-label" for="keyword">Keyword</label>  
         <div class="col-md-4">
-        <input id="doc_type" name="doc_type" type="text" class="form-control input-md">
-            
-        </div>
-        </div>
-        
-        <!-- Text input-->
-        <div class="form-group">
-        <label class="col-md-4 control-label" for="doc_type">Number of Copies</label>  
-        <div class="col-md-4">
-        <input id="number_copies" name="number_copies"" type="text" class="form-control input-md">
+        <input id="keyword" name="keyword" type="text" class="form-control input-md" required>
             
         </div>
         </div>
@@ -65,6 +46,51 @@
         </fieldset>
         </form>
     </div>
+</div>
+
+<div class="row column text-center">
+    <h2>Document Keywords</h2>
+    <hr>
+</div>
+
+<div class="row">
+  <div class="col-md-2"></div>
+  <div class="col-md-8">
+      <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    Document Title
+                </th>
+                <th>
+                    Keyword
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                <td>
+                    {{ row['doc_title'] }}
+                </td>
+                <td>
+                    {{ row['keyword'] }}
+                </td>
+            </tr>
+            {% else %}
+                <tr>
+                <td>
+                    No Data
+                </td>
+                <td>
+                    No Data
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+  </div>
+  <div class="col-md-2"></div>
 </div>
 
 {% endblock %}

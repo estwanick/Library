@@ -82,7 +82,30 @@ def add_reader():
 
 @app.route('/keywords')
 def keywords():
-    return render_template('signup_library.html')
+    
+    query = ''' select doc_title, doc_id from document '''
+    cur = g.db.execute( query )
+    options = [dict( doc_id=row[1], doc_title=row[0]) for row in cur.fetchall()]
+    
+    query = ''' 
+            select dk.doc_id, dk.keyword, d.doc_title 
+            from document_keyword as dk 
+            inner join document as d
+                on dk.doc_id = d.doc_id
+            order by d.doc_title 
+            '''
+    cur = g.db.execute( query )
+    rows = [dict( doc_id=row[0], keyword=row[1], doc_title=row[2]) for row in cur.fetchall()]
+
+    return render_template('keywords.html', options=options, rows=rows)
+    
+@app.route('/add_keyword', methods=['post'])
+def add_keyword():
+    
+    query = ''' insert into document_keyword values (?, ?) '''
+    cur = g.db.execute( query, [ request.form['document'], request.form['keyword'] ] )
+    g.db.commit()
+    return redirect( url_for('keywords') )
     
 @app.route('/reader_home')
 def reader_home():
@@ -151,6 +174,7 @@ def reader_home():
             g.db.commit() 
             
     
+    #Select all documents a reader is waiting for 
     waitquery = '''
                     select w.doc_id, w.wait_date, d.doc_title 
                     from waiting as w 
@@ -160,7 +184,97 @@ def reader_home():
                 '''
                 
     waitcur = g.db.execute( waitquery, [session['reader_id']] ) 
-    waitrows = [dict(doc_id=row[0], wait_date=row[1], doc_title=row[2]) for row in waitcur.fetchall()]      
+    waitrows = [dict(doc_id=row[0], wait_date=row[1], doc_title=row[2]) for row in waitcur.fetchall()]
+    
+    #Search for libraries that may not have this document in stock
+    #If the users library has this document in stock put an entry in the borrow relation
+    for wait_doc in waitrows:
+        print wait_doc
+        query = '''
+                    select d.doc_id, max( i.doc_copy ), i.lib_id
+                    from inventory as i
+                    inner join document as d 
+                        on i.doc_id = d.doc_id
+                    where i.curr_location = (?)
+                        and i.doc_id = (?)
+                    and not exists
+                    (
+                        select *
+                        from borrow as b
+                        where b.doc_id   = i.doc_id
+                            and b.doc_copy = i.doc_copy
+                    )and not exists
+                    (
+                        select *
+                        from return as r
+                        where r.doc_id   = i.doc_id
+                            and r.doc_copy = i.doc_copy 
+                            and r.actual_return = (?)
+                    )
+                    and not exists
+                    (
+                        select *
+                        from lend as l
+                        where l.doc_id = i.doc_id
+                            and l.doc_copy = i.doc_copy
+                            and l.status = 'processing'
+                    )
+                '''
+        cur = g.db.execute( query, [ session['lib_id'], wait_doc['doc_id'], todays_date] )
+        availrows = [dict(doc_id=row[0], doc_copy=row[1]) for row in cur.fetchall()]
+        
+        #If available rows is <> to empty that means the users current library has the document available
+        print availrows
+        if availrows[0]['doc_id'] is not None and availrows[0]['doc_copy'] is not None:
+            print('Borrow waiting doc')
+            borrow_doc( session['lib_id'], availrows[0]['doc_id'], availrows[0]['doc_copy'])
+            cur = g.db.execute( 'delete from waiting where doc_id = (?) and reader_id = (?)', [ availrows[0]['doc_id'], session['reader_id']] )
+            g.db.commit()
+            
+    #If the document is available at another library put an entry in the lend relation    
+    for wait_doc in waitrows:
+        print wait_doc
+        query = '''
+                    select d.doc_id, max( i.doc_copy ), i.lib_id
+                    from inventory as i
+                    inner join document as d 
+                        on i.doc_id = d.doc_id
+                    where i.curr_location <> (?)
+                        and i.doc_id = (?)
+                    and not exists
+                    (
+                        select *
+                        from borrow as b
+                        where b.doc_id   = i.doc_id
+                            and b.doc_copy = i.doc_copy
+                    )and not exists
+                    (
+                        select *
+                        from return as r
+                        where r.doc_id   = i.doc_id
+                            and r.doc_copy = i.doc_copy 
+                            and r.actual_return = (?)
+                    )
+                    and not exists
+                    (
+                        select *
+                        from lend as l
+                        where l.doc_id = i.doc_id
+                            and l.doc_copy = i.doc_copy
+                            and l.status = 'processing'
+                    )
+                '''
+        cur = g.db.execute( query, [ session['lib_id'], wait_doc['doc_id'], todays_date] )
+        docOtherLib = [dict(doc_id=row[0], doc_copy=row[1]) for row in cur.fetchall()]
+        
+        #If available rows is <> to empty that means the users current library has the document available
+        print docOtherLib
+        if docOtherLib[0]['doc_id'] is not None and docOtherLib[0]['doc_copy'] is not None:
+            print('Order waiting doc')
+            order( docOtherLib [0]['doc_id'] )
+            cur = g.db.execute( 'delete from waiting where doc_id = (?) and reader_id = (?)', [ docOtherLib[0]['doc_id'], session['reader_id']] )
+            g.db.commit()
+    
     
     return render_template('reader_home.html', rows=rows, returnrows=returnrows, orderrows=orderrows, waitrows=waitrows)
 
@@ -461,17 +575,26 @@ def inventory():
                 select *
                 from inventory as i
                 where i.doc_id = d.doc_id
-                and not exists(
+                and not exists
+                    (
                     select * 
                     from borrow as b
                     where b.doc_id = d.doc_id
-                        and b.doc_copy = i.doc_copy
-                        and b.reader_id <> 'reader1'
-                ) 
+                        and b.doc_copy = i.doc_copy     
+                    )   
+                and not exists 
+                    (
+                    select * 
+                    from return as r
+                    where r.doc_id = d.doc_id
+                        and r.doc_copy = i.doc_copy
+                        and r.actual_return = '2016-04-30'
+                    )         
             );
             '''
     cur = g.db.execute( query )
     waitdocs = [dict( doc_id=row[0], doc_name=row[1] ) for row in cur.fetchall()]
+    
     
     return render_template('inventory.html', rows=rows, uarows=uarows, waitdocs=waitdocs)
     
@@ -485,6 +608,9 @@ def wait(doc_id=None):
 
 @app.route('/order/<doc_id>/')
 def order(doc_id=None):
+    
+    print 'Order Document, ', doc_id
+
     todays_date = time.strftime("%Y-%m-%d")
     date = datetime.datetime.strptime(todays_date, "%Y-%m-%d").date()
     delivery_date = date + datetime.timedelta(days=5)
@@ -640,59 +766,66 @@ def doc_info(doc_id=None):
         rows = [dict( doc_id=row[0], doc_name=row[1], doc_type=row[2] ) for row in cur.fetchall()]
         
         # #Retrieve keywords
-        # query = 'select keyword from document_keyword where doc_id = (?)'
-        # cur = g.db.execute( query, [doc_id] )
-        # keywords = [dict( keyword=row[0] ) for row in cur.fetchall()]
+        query = 'select keyword from document_keyword where doc_id = (?)'
+        cur = g.db.execute( query, [doc_id] )
+        keywords = [dict( doc_keyword=row[0] ) for row in cur.fetchall()]
         
+        print keywords
         #Retrieve all document keywords in a separate list
         count = document_count()
         doc_list = []
         doc_similarity = []
-        
-        #Create a list of lists, each list contains all the keywords for a given document
-        for doc in xrange(1, count + 1):
-            query = 'select doc_id, keyword from document_keyword where doc_id = (?)'
-            cur = g.db.execute( query, [doc] )
-            doc_words = [dict( doc_id=row[0], doc_keyword=row[1]) for row in cur.fetchall()]
-            doc_list.append( doc_words )
-        
-        for item in doc_list:
-            
-            doc_index = int( doc_id ) - 1 
-            original_keywords = normalize_list( doc_list[ doc_index ] )
-            compare_keywords  = normalize_list( item )
-            
-            print original_keywords
-            print compare_keywords
-            #Call cosine sim with each document paired to the document you are searching
-            similarity = cosineSim( original_keywords, compare_keywords )
-            
-            #Get title of document
-            query = 'select doc_title from document where doc_id = (?)'
-            cur = g.db.execute( query, [ item[0]['doc_id'] ] )
-            doc_title = cur.fetchone()[0]
-
-            doc_object = {
-                'doc_id':  item[0]['doc_id'],
-                'doc_title': doc_title,
-                'similarity': similarity
-            }
-            
-            doc_similarity.append( doc_object )
-            
-        #Exclude the original document
-        del doc_similarity[doc_index]              
-        print doc_similarity
-        
         ordered_by_sim = []
-        for doc_sim in sorted(doc_similarity, key=operator.itemgetter("similarity"), reverse=True):
-            print doc_sim
-            ordered_by_sim.append( doc_sim )
+        if keywords:
+             
+            #Create a list of lists, each list contains all the keywords for a given document
+            for doc in xrange(1, count + 1):
+                query = 'select doc_id, keyword from document_keyword where doc_id = (?)'
+                cur = g.db.execute( query, [doc] )
+                doc_words = [dict( doc_id=row[0], doc_keyword=row[1]) for row in cur.fetchall()]
+                if doc_words:
+                    doc_list.append( doc_words )
+                
+            
+            print doc_list
+            
+            for item in doc_list:
+                #print item 
+                doc_index = int( doc_id ) - 1 
+                original_keywords = normalize_list( doc_list[ doc_index ] )
+                compare_keywords  = normalize_list( item )
+                
+                #print 'List1', original_keywords
+                #print 'List2', compare_keywords
+                #Call cosine sim with each document paired to the document you are searching
+                similarity = cosineSim( original_keywords, compare_keywords )
+
+                #Get title of document
+                # query = 'select doc_title from document where doc_id = (?)'
+                # cur = g.db.execute( query, [ item[0]['doc_id'] ] )
+                # doc_title = cur.fetchone()[0]
+                doc_title = '1'
+                doc_object = {
+                    'doc_id':  item[0]['doc_id'],
+                    'doc_title': doc_title,
+                    'similarity': similarity
+                }
+                
+                doc_similarity.append( doc_object )
+                
+            # # #Exclude the original document
+            # del doc_similarity[doc_index]              
+            # #print doc_similarity
+            
+            
+            for doc_sim in sorted(doc_similarity, key=operator.itemgetter("similarity"), reverse=True):
+                #print doc_sim
+                ordered_by_sim.append( doc_sim )
                
     else:
         pass
 
-    return render_template('doc_info.html', context=rows, keywords=doc_words, ordered_by_sim=ordered_by_sim)
+    return render_template('doc_info.html', context=rows, keywords=keywords, ordered_by_sim=ordered_by_sim)
     
 def cosineSim( oList, cList):
 
@@ -702,25 +835,25 @@ def cosineSim( oList, cList):
     for x in range( len(vectorlist1) ):
         dotProduct += vectorlist1[x] * vectorlist2[x]
     
-    print dotProduct
+    #print dotProduct
     sigmaList1 = 0.0
     sigmaList2 = 0.0
     
     for x in range( len(vectorlist1) ):
         sigmaList1 += pow( vectorlist1[x] , 2)
         
-    print sigmaList1
+    #print sigmaList1
         
     for x in range( len(vectorlist2) ):
         sigmaList2 += pow( vectorlist2[x] , 2)
         
-    print sigmaList2
+    #print sigmaList2
     
     normalization1 = sqrt( sigmaList1 )
     normalization2 = sqrt( sigmaList2 )
     
-    print normalization1
-    print normalization2
+    #print normalization1
+    #print normalization2
     
     return ( dotProduct / ( normalization1 * normalization2 ) )
     
@@ -745,7 +878,7 @@ def wordVector( keywordlist, keywordlist2 ):
     
 def normalize_list( doc_list ):
     doc_keywords = []
-    
+    doc_id = 0
     for doc in doc_list:
         doc_id = doc['doc_id']
         doc_keywords.append( doc['doc_keyword'] )
