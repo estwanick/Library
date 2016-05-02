@@ -46,7 +46,13 @@
         <div class="form-group">
         <label class="col-md-4 control-label" for="doc_id">Return To</label>  
         <div class="col-md-4">
-        <input id="return_to" name="return_to" type="text" class="form-control input-md" value="{{ context[0]['lib_id'] }}" >
+        <select class="form-control" id="document" name="return_to" required>
+            {% for row in options %}
+            <option value="{{ row['lib_id'] }}">{{ row['lib_id'] }}</option>
+            {% else %}
+            
+            {% endfor %}
+        </select>
             
         </div>
         </div>

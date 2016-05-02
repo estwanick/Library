@@ -75,9 +75,6 @@
                     Document Copy
                 </th>
                 <th>
-                    Document Status
-                </th>
-                <th>
                     Current Location
                 </th>
                 <th>
@@ -142,6 +139,9 @@
                 <th>
                     Current Location
                 </th>
+                <th>
+                    Belongs to
+                </th>
             </tr>
         </thead>
         <tbody>
@@ -158,6 +158,9 @@
                 </td>
                 <td>
                     {{ row['curr_location'] }}
+                </td>
+                <td>
+                    {{ row['lib_id'] }}
                 </td>
             </tr>
             {% else %}

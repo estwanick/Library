@@ -14,16 +14,18 @@ insert into library values ('library2', 'New York Library', 09009, 'admin');
 insert into library values ('library3', 'New York-Newark Library', 02039, 'admin');
 insert into library values ('library4', 'Denton Library', 97093, 'admin');
 -- Add Documents
-insert into document values (1, 'Divergent', 'Action', 15);
+insert into document values (1, 'Divergent', 'Action', 9);
 insert into document values (2, 'Harry Potter ', 'Wizardry', 5);
 insert into document values (3, 'Bourne', 'Action', 5);
-insert into document values (4, 'Cactus', 'Story', 8);
+insert into document values (4, 'Cactus', 'Story', 6);
 insert into document values (5, 'Holes', 'Action', 6);
-insert into document values (6, 'Illustrator', 'Document', 7);
-insert into document values (7, 'MACOSX', 'Document', 7);
-insert into document values (8, 'Mad Science', 'Document', 8);
-insert into document values (9, 'Bootstrap for kids', 'Document', 9);
-insert into document values (10, 'Space X', 'Document', 10);
+insert into document values (6, 'Illustrator', 'Document', 5);
+insert into document values (7, 'MACOSX', 'Document', 5);
+insert into document values (8, 'Mad Science', 'Document', 5);
+insert into document values (9, 'Bootstrap for kids', 'Document', 5);
+insert into document values (10, 'Space X', 'Document', 2);
+insert into document values (11, 'Game of Thrones', 'Document', 1);
+insert into document values (12, 'The Following', 'Document', 1);
 -- Add Document Keyword
 insert into document_keyword values (1, 'hello');
 insert into document_keyword values (1, 'go');
@@ -78,6 +80,10 @@ insert into document_keyword values (10, 'super');
 insert into document_keyword values (10, 'fast');
 insert into document_keyword values (10, 'quick');
 insert into document_keyword values (10, 'good');
+insert into document_keyword values (11, 'quick');
+insert into document_keyword values (11, 'good');
+insert into document_keyword values (12, 'quick');
+insert into document_keyword values (12, 'good');
 -- Add Readers
 insert into reader values ('reader1','Michael','researcher','admin');
 insert into reader values ('reader2','Richard','researcher','admin');
@@ -94,6 +100,7 @@ insert into member_of values ('reader5','library3');
 insert into member_of values ('reader6','library4');
 -- Add Inventory
 insert into inventory values ('library1', 1, 1, 'library1');
+insert into inventory values ('library1', 11, 1, 'library1');
 insert into inventory values ('library1', 1, 2, 'library1');
 insert into inventory values ('library1', 1, 3, 'library1');
 insert into inventory values ('library1', 1, 4, 'library1');
@@ -150,6 +157,8 @@ insert into authoring values (4, 7);
 insert into authoring values (4, 8);
 insert into authoring values (1, 9);
 insert into authoring values (1, 10);
+insert into authoring values (2, 11);
+insert into authoring values (2, 12);
 -- Add Waiting 
 -- insert into waiting values ('reader1', 1, '2016-04-16');
 -- insert into waiting values ('reader2', 1, '2016-04-16');

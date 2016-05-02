@@ -651,22 +651,80 @@ PRAGMA foreign_keys = ON;
 --         and l.status = 'processing'
 -- );
 
-select i.lib_id, i.doc_id, max( i.doc_copy )
-            from inventory as i
-            where i.lib_id <> 'library1'
-            and i.doc_id = 11
-            and not exists
-            (
-                select *
-                from borrow as b
-                where b.doc_id = i.doc_id
-                    and b.doc_copy = i.doc_copy 
-            )
-            and not exists
-            (
-                select *
-                from lend as l
-                where l.doc_id = i.doc_id
-                  and l.doc_copy = i.doc_copy
-                  and l.status = 'processing'
-            );
+
+--Original wait list query
+-- select *
+-- from document as d
+-- where not exists(
+--     select *
+--     from inventory as i
+--     where i.doc_id = d.doc_id
+--     and not exists
+--         (
+--         select * 
+--         from borrow as b
+--         where b.doc_id = d.doc_id
+--             and b.doc_copy = i.doc_copy     
+--         )   
+--     and not exists 
+--         (
+--         select * 
+--         from return as r
+--         where r.doc_id = d.doc_id
+--             and r.doc_copy = i.doc_copy
+--             and r.actual_return = '2016-05-01'
+--         )         
+-- );
+
+-- select d.doc_title, d.doc_id
+-- from document as d
+-- where exists
+-- (
+--     select i.doc_id
+--     from inventory as i 
+--     where i.curr_location <> "library1"
+--     and i.doc_id = d.doc_id 
+-- ) 
+-- and not exists
+-- (
+--     select *
+--     from borrow as b
+--     where b.reader_id = 'reader1'
+--         and b.doc_id = d.doc_id
+-- ); 
+
+-- select d.doc_title, d.doc_id
+-- from document as d
+-- where not exists(
+--     select i.doc_id
+--     from inventory as i 
+--     where i.lib_id = (?)
+--     and i.doc_id = d.doc_id 
+-- )
+-- and exists
+-- (
+--     select i.doc_id
+--     from inventory as i 
+--     where i.lib_id <> "library1"
+--     and i.doc_id = d.doc_id 
+-- )
+-- and not exists
+-- (
+--     select *
+--     from borrow as b
+--     where b.reader_id = (?)
+--         and b.doc_id = d.doc_id
+-- );
+
+select ar.author_name, d.doc_title, i.doc_id, i.doc_copy, i.lib_id
+from inventory as i
+inner join document as d
+    on i.doc_id = d.doc_id
+inner join authoring as au 
+    on i.doc_id = au.doc_id
+inner join author as ar 
+    on au.author_id = ar.author_id
+left join document_keyword as k
+    on i.doc_id = k.doc_id  
+where ( d.doc_title like '%author%' or k.keyword like '%author%'  or ar.author_name like '%author%' )
+group by i.doc_id;

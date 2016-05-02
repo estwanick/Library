@@ -50,7 +50,7 @@ def search_results():
                 on au.author_id = ar.author_id
             left join document_keyword as k
                 on i.doc_id = k.doc_id  
-            where ( d.doc_title like (?) or k.keyword like (?) or ar.author_id like (?))
+            where ( d.doc_title like (?) or k.keyword like (?) or ar.author_name like (?))
             group by i.doc_id
             '''
     
@@ -81,21 +81,34 @@ def add_reader():
     return redirect( url_for('signup_reader') )
 
 @app.route('/keywords')
-def keywords():
+@app.route('/keywords/<doc_id>/')
+def keywords(doc_id=None):
     
     query = ''' select doc_title, doc_id from document '''
     cur = g.db.execute( query )
     options = [dict( doc_id=row[1], doc_title=row[0]) for row in cur.fetchall()]
     
-    query = ''' 
-            select dk.doc_id, dk.keyword, d.doc_title 
-            from document_keyword as dk 
-            inner join document as d
-                on dk.doc_id = d.doc_id
-            order by d.doc_title 
-            '''
-    cur = g.db.execute( query )
-    rows = [dict( doc_id=row[0], keyword=row[1], doc_title=row[2]) for row in cur.fetchall()]
+    if doc_id == None:
+        query = ''' 
+                select dk.doc_id, dk.keyword, d.doc_title 
+                from document_keyword as dk 
+                inner join document as d
+                    on dk.doc_id = d.doc_id
+                order by d.doc_title 
+                '''
+        cur = g.db.execute( query )
+        rows = [dict( doc_id=row[0], keyword=row[1], doc_title=row[2]) for row in cur.fetchall()]
+    else:
+        query = ''' 
+                select dk.doc_id, dk.keyword, d.doc_title 
+                from document_keyword as dk 
+                inner join document as d
+                    on dk.doc_id = d.doc_id
+                where d.doc_id = (?)
+                order by d.doc_title 
+                '''
+        cur = g.db.execute( query, [doc_id] )
+        rows = [dict( doc_id=row[0], keyword=row[1], doc_title=row[2]) for row in cur.fetchall()]      
 
     return render_template('keywords.html', options=options, rows=rows)
     
@@ -105,7 +118,7 @@ def add_keyword():
     query = ''' insert into document_keyword values (?, ?) '''
     cur = g.db.execute( query, [ request.form['document'], request.form['keyword'] ] )
     g.db.commit()
-    return redirect( url_for('keywords') )
+    return redirect( url_for('keywords', doc_id=request.form['document']) )
     
 @app.route('/reader_home')
 def reader_home():
@@ -228,6 +241,8 @@ def reader_home():
         if availrows[0]['doc_id'] is not None and availrows[0]['doc_copy'] is not None:
             print('Borrow waiting doc')
             borrow_doc( session['lib_id'], availrows[0]['doc_id'], availrows[0]['doc_copy'])
+            cur = g.db.execute( 'update inventory set curr_location = (?) where doc_id = (?) and doc_copy = (?)', [ session['lib_id'], availrows[0]['doc_id'], availrows[0]['doc_copy']] )
+            g.db.commit()
             cur = g.db.execute( 'delete from waiting where doc_id = (?) and reader_id = (?)', [ availrows[0]['doc_id'], session['reader_id']] )
             g.db.commit()
             
@@ -290,11 +305,14 @@ def doc_return(borrow_id=None):
             '''
         cur = g.db.execute( query, [borrow_id] )
         rows = [dict( doc_name=row[0], lib_id=row[1], doc_id=row[2], doc_copy=row[3], borrow_id=row[4] ) for row in cur.fetchall()]
-        print rows
+        #print rows
+        query = ''' select lib_id from library'''
+        cur = g.db.execute( query )
+        options = [dict( lib_id=row[0]) for row in cur.fetchall()]
     else:
         pass
 
-    return render_template('return.html', context=rows)
+    return render_template('return.html', context=rows, options=options)
     
 @app.route('/dreturn', methods=['POST'])
 def dreturn():
@@ -435,7 +453,7 @@ def library_home():
                 from inventory as i
                 inner join document as d 
                     on d.doc_id = i.doc_id
-                where lib_id = (?) and curr_location = (?)
+                where curr_location = (?)
                   and not exists(
                       select *
                       from borrow as b
@@ -443,7 +461,7 @@ def library_home():
                         and b.doc_copy = i.doc_copy  
                   );
             '''
-    cur = g.db.execute( query, [ session['lib_id'], session['lib_id'] ])
+    cur = g.db.execute( query, [ session['lib_id'] ])
     rows = [dict(lib_id=row[0], doc_id=row[1], doc_copy=row[2], curr_location=row[3], doc_title=row[4]) for row in cur.fetchall()]
     #Documents at other libraries
     query = ''' select * 
@@ -543,35 +561,42 @@ def inventory():
     query = ''' 
             select d.doc_title, d.doc_id
             from document as d
-            where not exists(
-                select i.doc_id
-                from inventory as i 
-                where i.lib_id = (?)
-                and i.doc_id = d.doc_id 
-            )
-            and exists
+            where exists
             (
                 select i.doc_id
                 from inventory as i 
-                where i.lib_id <> "library1"
+                where i.curr_location <> (?)
                 and i.doc_id = d.doc_id 
-            )
+            ) 
             and not exists
             (
                 select *
                 from borrow as b
                 where b.reader_id = (?)
-                  and b.doc_id = d.doc_id
-            )  
+                    and b.doc_id = d.doc_id
+            )
+            and not exists(
+                select *
+                from lend as l
+                where l.for_reader = (?)
+                  and l.status = 'processing'
+                  and l.doc_id = d.doc_id
+            );   
             '''
     
-    cur = g.db.execute( query, [ session['lib_id'], session['reader_id'] ] )
+    cur = g.db.execute( query, [ session['lib_id'], session['reader_id'], session['reader_id'] ] )
     uarows = [dict( doc_name=row[0], doc_id=row[1] ) for row in cur.fetchall()]
     
     query = '''
             select *
             from document as d
             where not exists(
+                select * 
+                from borrow as b
+                where b.doc_id = d.doc_id
+                and b.reader_id = (?)  
+            )  
+            and not exists(
                 select *
                 from inventory as i
                 where i.doc_id = d.doc_id
@@ -588,11 +613,11 @@ def inventory():
                     from return as r
                     where r.doc_id = d.doc_id
                         and r.doc_copy = i.doc_copy
-                        and r.actual_return = '2016-04-30'
+                        and r.actual_return = (?)
                     )         
             );
             '''
-    cur = g.db.execute( query )
+    cur = g.db.execute( query, [session['reader_id'], todays_date] )
     waitdocs = [dict( doc_id=row[0], doc_name=row[1] ) for row in cur.fetchall()]
     
     
@@ -627,7 +652,7 @@ def order(doc_id=None):
     query = '''
             select i.lib_id, i.doc_id, max( i.doc_copy )
             from inventory as i
-            where i.lib_id <> (?)
+            where i.curr_location <> (?)
             and i.doc_id = (?)
             and not exists
             (
@@ -748,7 +773,7 @@ def confirm_lend():
     
     #Insert into lend
     g.db.execute('insert into lend (to_lib, from_lib, order_date, delivery_date, doc_id, doc_copy, status) values (?, ?, ?, ?, ?, ?, ?)', 
-                    [ request.form['to_lib'], request.form['from_lib'], request.form['order_date'], request.form['delivery_date'], request.form['doc_id'], request.form['doc_copy'], "In Process" ])
+                    [ request.form['to_lib'], request.form['from_lib'], request.form['order_date'], request.form['delivery_date'], request.form['doc_id'], request.form['doc_copy'], "processing" ])
     g.db.commit()
 
     return redirect(url_for('library_home'))
@@ -801,10 +826,10 @@ def doc_info(doc_id=None):
                 similarity = cosineSim( original_keywords, compare_keywords )
 
                 #Get title of document
-                # query = 'select doc_title from document where doc_id = (?)'
-                # cur = g.db.execute( query, [ item[0]['doc_id'] ] )
-                # doc_title = cur.fetchone()[0]
-                doc_title = '1'
+                query = 'select doc_title from document where doc_id = (?)'
+                cur = g.db.execute( query, [ item[0]['doc_id'] ] )
+                doc_title = cur.fetchone()[0]
+
                 doc_object = {
                     'doc_id':  item[0]['doc_id'],
                     'doc_title': doc_title,
@@ -814,7 +839,7 @@ def doc_info(doc_id=None):
                 doc_similarity.append( doc_object )
                 
             # # #Exclude the original document
-            # del doc_similarity[doc_index]              
+            del doc_similarity[doc_index]              
             # #print doc_similarity
             
             
@@ -944,8 +969,8 @@ def borrow(doc_id=None):
         cur = g.db.execute( query, [ session['lib_id'], session['lib_id'], doc_id, todays_date] )
         rows = [ dict( doc_name=row[0], doc_copy=row[1], doc_desc=row[2], curr_location=row[3], doc_id=row[4], lib_id=row[5] ) for row in cur.fetchall()]
         
-        print 'ROWS--------------------'
-        print rows
+        #print 'ROWS--------------------'
+        #print rows
                 
         #If rows is blank, then the users current library does not have any copies available
         if rows[0]['doc_id'] == None:
@@ -1002,12 +1027,14 @@ def borrow(doc_id=None):
         if ua_docs:
             buttons['order'] = True
             
+        
+            
         # print 'Borrow -----------------------'
         # print borrow_docs
-        print 'Unavailable -----------------------'
-        print ua_docs
+        #print 'Unavailable -----------------------'
+        #print ua_docs
         
-        print buttons
+        #print buttons
         #print rows 
         #print len( rows )
 
@@ -1077,6 +1104,17 @@ def borrow_doc(lib_id=None,doc_id=None, doc_copy=None):
     todays_date = time.strftime("%Y-%m-%d")
     date = datetime.datetime.strptime(todays_date, "%Y-%m-%d").date()
     expected_return = date + datetime.timedelta(days=10)
+    
+    #Check if document is already being borrowed 
+    cur = g.db.execute('select doc_id from borrow where reader_id = (?) and doc_id = (?)', 
+                    [ session['reader_id'], doc_id])
+    isBorrowed = [dict( doc_id=row[0] ) for row in cur.fetchall()]
+    
+    print 'length: ', len( isBorrowed )
+    print isBorrowed
+    if isBorrowed != []:
+        flash('You are already borrowing this document', 'error')
+        return redirect( url_for('borrow', doc_id=doc_id) )
        
     #Insert into borrow 
     g.db.execute('insert into borrow (reader_id, lib_id, doc_id, doc_copy, borrow_date, exp_return) values (?, ?, ?, ?, ?, ?)', 
@@ -1115,20 +1153,38 @@ def add_author():
     return redirect(url_for('author'))
     
 @app.route('/document') 
-def document():
-    query = '''
-                select d.doc_id, d.doc_title, d.doc_type, d.number_copies, u.author_name, max(i.doc_copy)
-                from document as d
-                inner join authoring as a
-                    on d.doc_id = a.doc_id
-                inner join author as u
-                    on a.author_id = u.author_id
-                left join inventory as i
-                    on d.doc_id = i.doc_id
-                group by i.doc_id
-            '''
-    cur = g.db.execute( query )
-    rows = [dict( doc_id=row[0], doc_title=row[1], doc_type=row[2], number_copies=row[3], author_name=row[4], copies_out=row[5] ) for row in cur.fetchall()]
+@app.route('/document/<author_id>/') 
+def document(author_id=None):
+
+    if author_id == None:
+        query = '''
+                    select d.doc_id, d.doc_title, d.doc_type, d.number_copies, u.author_name, max(i.doc_copy)
+                    from document as d
+                    inner join authoring as a
+                        on d.doc_id = a.doc_id
+                    inner join author as u
+                        on a.author_id = u.author_id
+                    left join inventory as i
+                        on d.doc_id = i.doc_id
+                    group by i.doc_id
+                '''
+        cur = g.db.execute( query )
+        rows = [dict( doc_id=row[0], doc_title=row[1], doc_type=row[2], number_copies=row[3], author_name=row[4], copies_out=row[5] ) for row in cur.fetchall()]
+    else:
+        query = '''
+                    select d.doc_id, d.doc_title, d.doc_type, d.number_copies, u.author_name, max(i.doc_copy)
+                    from document as d
+                    inner join authoring as a
+                        on d.doc_id = a.doc_id
+                    inner join author as u
+                        on a.author_id = u.author_id
+                    left join inventory as i
+                        on d.doc_id = i.doc_id
+                    where u.author_id = (?)
+                    group by i.doc_id
+                '''
+        cur = g.db.execute( query, [author_id] )
+        rows = [dict( doc_id=row[0], doc_title=row[1], doc_type=row[2], number_copies=row[3], author_name=row[4], copies_out=row[5] ) for row in cur.fetchall()]        
     
     for row in rows:
         if row['copies_out'] is not None:
@@ -1153,7 +1209,7 @@ def add_document():
                     [ request.form['authors'], doc_id ])
     g.db.commit()
     
-    return redirect(url_for('document'))
+    return redirect(url_for('document', author_id=request.form['authors']))
     
 #Sign out of session
 @app.route('/signout')

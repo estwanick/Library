@@ -2,6 +2,16 @@
 {% block body %}
 
 <!-- Main jumbotron for a primary marketing message or call to action -->
+{% with error = get_flashed_messages(category_filter=["error"]) %}
+{% if error %}
+<div class="alert alert-danger">
+{% for message in error%}
+    {{ message }}
+{% endfor %}
+<a class="btn btn-primary btn-sm" href="{{ url_for('inventory') }}" role="button">To Inventory</a>
+</div>
+{% endif %}
+{% endwith %}
 <div class="jumbotron">
     <div class="container">
         <h1>{{ context[0]['doc_name'] }}</h1>

@@ -9,7 +9,12 @@
         <p>
             Keywords: {% for row in keywords %} {{ row['doc_keyword'] }} {% else %} N/A {% endfor %}
         </p>
-        <p><a class="btn btn-primary btn-lg" href="{{ url_for('borrow', doc_id=context[0]['doc_id'] ) }}" role="button">Borrow</a></p>
+        {% if session.reader_logged_in %}
+            <p><a class="btn btn-primary btn-lg" href="{{ url_for('borrow', doc_id=context[0]['doc_id'] ) }}" role="button">Borrow</a></p>
+        {% endif %}
+        {% if session.lib_logged_in %}
+            <a class="btn btn-success btn-lg" href="{{ url_for('add_to_inventory', doc_id=context[0]['doc_id']) }}" role="button">Add to Inventory</a>  
+        {% endif %}
     </div>
 </div>
 
@@ -49,11 +54,12 @@
                 </td>
                 <td>
                     {% if session.reader_logged_in %}
-                        <a class="btn btn-primary btn-sm" href="{{ url_for('borrow',   doc_id=row['doc_id']) }}" role="button">Borrow</a>
+                        <a class="btn btn-primary btn-sm" href="{{ url_for('borrow',   doc_id=row['doc_id']) }}" role="button">Borrow</a>        
                     {% endif %}
                     {% if session.lib_logged_in %}
                         <a class="btn btn-success btn-sm" href="{{ url_for('add_to_inventory', doc_id=row['doc_id']) }}" role="button">Add to Inventory</a>  
                     {% endif %}
+                        <a class="btn btn-success btn-sm" href="{{ url_for('doc_info', doc_id=row['doc_id']) }}" role="button">Info</a> 
                 </td>
             </tr>
             {% else %}
